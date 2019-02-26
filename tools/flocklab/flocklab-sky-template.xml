@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testConf xmlns="http://www.flocklab.ethz.ch" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.flocklab.ethz.ch xml/flocklab.xsd">
+	<!-- General configuration -->
+	<generalConf>
+		<name>Name</name>
+		<description>Description</description>
+		<scheduleAsap>
+			<durationSecs>120</durationSecs>
+		</scheduleAsap>
+		<!--<scheduleAbsolute>
+			<start>2018-05-28T02:14:00Z</start>
+			<end>2018-05-28T03:14:00Z</end>
+		</scheduleAbsolute>-->
+		<emailResults>no</emailResults>
+	</generalConf>
+	
+	<!-- Target configuration -->
+	<targetConf>
+		<obsIds>001 002 003 004 006 007 008 010 011 013 014 015 016 017 018 019 020 022 023 024 025 026 027 028 032 033</obsIds>
+		<voltage>3.3</voltage>
+		<embeddedImageId>SkyImage</embeddedImageId>
+	</targetConf>
+	
+	<!-- Serial Service configuration -->
+	<serialConf>
+		<obsIds>001 002 003 004 006 007 008 010 011 013 014 015 016 017 018 019 020 022 023 024 025 026 027 028 032 033</obsIds>
+		<port>usb</port>
+		<baudrate>115200</baudrate>
+		<mode>ascii</mode>
+		<remoteIp>255.255.255.255</remoteIp>
+	</serialConf>
+	
+	<!-- GPIO Tracing Service configuration -->
+	<gpioTracingConf>
+		<obsIds>001 002 003 004 006 007 008 010 011 013 014 015 016 017 018 019 020 022 023 024 025 026 027 028 032 033</obsIds>
+		<pinConf>
+			<!-- P6.0 -->
+			<pin>INT1</pin>
+			<edge>both</edge>
+			<mode>continuous</mode>
+		</pinConf>
+		<pinConf>
+			<!-- P6.1 -->
+			<pin>INT2</pin>
+			<edge>both</edge>
+			<mode>continuous</mode>
+		</pinConf>
+		<pinConf>
+			<!-- P6.7 -->
+			<pin>LED1</pin>
+			<edge>both</edge>
+			<mode>continuous</mode>
+		</pinConf>
+		<pinConf>
+			<!-- P6.6 -->
+			<pin>LED2</pin>
+			<edge>both</edge>
+			<mode>continuous</mode>
+		</pinConf>
+		<pinConf>
+			<!-- P6.2 -->
+			<pin>LED3</pin>
+			<edge>both</edge>
+			<mode>continuous</mode>
+		</pinConf>
+	</gpioTracingConf>
+	
+	<!-- GPIO Actuation Service configuration -->
+	<!--<gpioActuationConf>
+		<obsIds>001 002 003 004 006 007 008 010 011 013 014 015 016 017 018 019 020 022 023 024 025 026 027 028 032 033</obsIds>
+		<pinConf>
+			<pin>SIG1</pin>
+			<level>toggle</level>
+			<relativeTime>
+				<offsetSecs>300</offsetSecs>
+			</relativeTime>
+		</pinConf>
+		<pinConf>
+			<pin>SIG1</pin>
+			<level>toggle</level>
+			<relativeTime>
+				<offsetSecs>310</offsetSecs>
+				<offsetMicrosecs>999999</offsetMicrosecs>
+			</relativeTime>
+		</pinConf>
+	</gpioActuationConf>-->
+	
+	<!-- Power Profiling Service configuration -->
+	<!--<powerProfilingConf>
+		<obsIds>001 004 006 015 016 022 028 031 032</obsIds>
+		<profConf>
+			<durationMillisecs>300</durationMillisecs>
+			<relativeTime>
+				<offsetSecs>300</offsetSecs>
+				<offsetMicrosecs>123456</offsetMicrosecs>
+			</relativeTime>
+		</profConf>
+		<profConf>
+			<durationMillisecs>3600</durationMillisecs>
+			<absoluteTime>
+				<absoluteDateTime>2099-08-20T16:31:15Z</absoluteDateTime>
+			</absoluteTime>
+		</profConf>
+	</powerProfilingConf>-->
+	
+	<imageConf>
+		<embeddedImageId>SkyImage</embeddedImageId>
+		<name>Sky image</name>
+		<description>Tmote Sky app</description>
+		<platform>tmote</platform>
+		<os>tinyos</os>
+		<data>
+</data>
+	</imageConf>
+</testConf>

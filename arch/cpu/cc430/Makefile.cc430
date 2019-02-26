@@ -1,0 +1,77 @@
+# $Id: Makefile.msp430,v 1.35 2011/01/19 07:30:31 adamdunkels Exp $
+
+ifndef CONTIKI
+  $(error CONTIKI not defined! You must specify where CONTIKI resides!)
+endif
+
+COOJA_PATH ?= $(CONTIKI)/tools/cooja
+
+ifdef nodeid
+CFLAGS += -DNODEID=$(nodeid)
+endif
+
+CFLAGS += -ggdb #-gstabs+
+
+.SUFFIXES:
+
+### Define the CPU directory
+CONTIKI_CPU=$(CONTIKI)/arch/cpu/cc430
+
+CONTIKI_CPU_DIRS = . 
+
+CC430 = pmm.c spi.c uart.c watchdog.c soc.c \
+	rf1a.c rtimer-ext.c
+
+
+CONTIKI_TARGET_SOURCEFILES += $(CC430)
+
+CONTIKI_SOURCEFILES        += $(CONTIKI_TARGET_SOURCEFILES)
+
+CONTIKI_TARGET_MAIN = contiki-main.c
+PROJECT_OBJECTFILES += ${addprefix $(OBJECTDIR)/,$(CONTIKI_TARGET_MAIN:.c=.o)}
+
+MCU ?= cc430f5147
+CC_MCU = $(MCU)
+
+### Compiler definitions
+
+ifeq ($(WERROR),1)
+CFLAGSWERROR= -Wall -Werror
+endif
+
+HEXFILE = $(CONTIKI_PROJECT)-$(TARGET).hex
+DISFILE = $(CONTIKI_PROJECT)-$(TARGET).dis
+
+GCC      = 1
+CC       = msp430-gcc
+LD       = msp430-gcc
+AS       = msp430-as
+AR       = msp430-ar
+NM       = msp430-nm
+OBJCOPY  = msp430-objcopy
+OBJDUMP  = msp430-objdump
+SIZE  	 = msp430-size
+STRIP    = msp430-strip
+BSL      = msp430-bsl
+
+ifndef CFLAGSNO
+CFLAGSNO = -Wall -mmcu=$(CC_MCU) $(CFLAGSWERROR)
+endif
+CFLAGS  += -Os
+LDFLAGS = -mmcu=$(CC_MCU) -Wl,--gc-sections -ggdb -Wl,-Map=$(CONTIKI_NG_PROJECT_MAP)
+
+### These flags can reduce the code size and RAM usage with up to 10%
+SMALL ?= 1
+ifeq ($(SMALL),1)
+CFLAGS += -ffunction-sections
+CFLAGS += -fdata-sections
+#LDFLAGS += -Wl,--gc-sections,--undefined=_reset_vector__,--undefined=InterruptVectors,--undefined=_copy_data_init__,--undefined=_clear_bss_init__,--undefined=_end_of_init__
+endif # SMALL
+
+
+CFLAGS  += $(CFLAGSNO)
+
+STACKSIZE ?= 512
+
+stackcheck:
+	@msp430-size $(CONTIKI_PROJECT).$(TARGET) | tail -1 | awk '{if ($$2 + $$3 > (4096 - $(STACKSIZE))) { print "WARNING: only " 4096 - ($$2 + $$3) " bytes remaining for the stack!" } else { print "OK" } }'

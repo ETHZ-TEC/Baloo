@@ -1,0 +1,1 @@
+The original `testbed.h` is splitted into `config.h` and `testbed.h`. You must include `config.h` in all files that want to use some fields of the cfg structure as variable (e.g., assign one source node to be the LWB host).

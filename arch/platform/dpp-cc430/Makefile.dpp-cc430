@@ -1,0 +1,56 @@
+# dpp-cc430 platform makefile
+
+### Board and BSP selection
+BOARD ?= dpp2
+BOARDS = dpp1 dpp2
+
+NODE_ID ?= 1
+
+STACKSIZE ?= 512
+
+HEXFILE = $(CONTIKI_PROJECT)-$(TARGET).hex
+DISFILE = $(CONTIKI_PROJECT)-$(TARGET).dis
+
+CONTIKI_TARGET_DIRS = . $(BOARD) dev
+ifndef CONTIKI_TARGET_MAIN
+CONTIKI_TARGET_MAIN = contiki-main.c
+endif
+
+ARCH = rtimer-ext.c pmm.c rf1a.c spi.c uart.c
+
+CONTIKI_TARGET_SOURCEFILES += $(ARCH) platform.c node-id.c
+
+#CONTIKI_SOURCEFILES += $(CONTIKI_TARGET_SOURCEFILES)
+
+CLEAN += $(HEXFILE) $(DISFILE)
+
+### Define the CPU directory
+CONTIKI_CPU=$(CONTIKI)/arch/cpu/cc430
+include $(CONTIKI_CPU)/Makefile.cc430
+
+#MODULES += os/net/glossy
+
+
+files: $(CONTIKI_PROJECT).$(TARGET)
+	@$(OBJCOPY) $(CONTIKI_PROJECT).$(TARGET) -O ihex $(HEXFILE)
+	@$(OBJDUMP) -d $(CONTIKI_PROJECT).$(TARGET) > $(DISFILE)
+	$(info HEX and DIS file generated)
+
+upload: $(CONTIKI_PROJECT).upload
+	
+%.upload:
+	@tos-set-symbols --objcopy msp430-objcopy --objdump msp430-objdump --target ihex $(CONTIKI_PROJECT).$(TARGET) $(HEXFILE) TOS_NODE_ID=$(NODE_ID)
+	$(info node ID set to ${NODE_ID})
+	$(info file $(HEXFILE) generated from $(CONTIKI_PROJECT).$(TARGET))
+	@python ../../tools/dpp/program_cc430.py $(HEXFILE) $(PORT)
+
+login:
+	@python ../../tools/dpp/login_cc430.py $(HEXFILE) $(PORT)
+	
+reset: $(CONTIKI_PROJECT).reset
+
+%.reset:
+	@python ../../tools/dpp/reset_cc430.py $(PORT)
+
+stackcheck:
+	@msp430-size $(CONTIKI_PROJECT).$(TARGET) | tail -1 | awk '{if ($$2 + $$3 > (4096 - $(STACKSIZE))) { print "WARNING: only " 4096 - ($$2 + $$3) " bytes remaining for the stack!" } else { print "OK" } }'

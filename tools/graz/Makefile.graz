@@ -1,0 +1,12 @@
+DESCRIPTION ?= Test app
+CATEGORY ?= 1
+LAYOUT ?= 1
+PERIODICITY ?= 5000
+PAYLOAD_LENGTH ?= 8
+JAMMING ?= 0
+LOGS_ENABLED ?= 0
+DURATION ?= 180
+
+graz_test: $(CONTIKI_PROJECT)
+	@msp430-objcopy $(CONTIKI_PROJECT).$(TARGET) -O ihex $(CONTIKI_PROJECT)-$(TARGET).ihex
+	@curl -H "Content-Type: application/json" -X POST -d '{"name":"$(CONTIKI_PROJECT)", "description":"$(DESCRIPTION)", "category":"$(CATEGORY)", "layout":"$(LAYOUT)", "periodicity":$(PERIODICITY), "message_length":$(PAYLOAD_LENGTH), "duration": $(DURATION), "logs": $(LOGS_ENABLED), "jamming": $(JAMMING), "file": "$(shell cat $(CONTIKI_PROJECT)-$(TARGET).ihex|base64 -w0)"}' "https://iti-testbed.tugraz.at/api/queue/create_job?key=${GRAZ_KEY}"

@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<customconfig>
+    <section name="customconfig" address="0xd000" endianness="little" bits="16">
+      <int bits="8"  offset="0x0">n_tx_max</int>
+      <int bits="8"  offset="0x1">n_empty_ta</int>
+    </section>
+</customconfig>

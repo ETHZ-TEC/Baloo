@@ -1,0 +1,11 @@
+typedef enum
+{
+  GMW_RF_TX_PWR_0_dBm         = 31,
+  GMW_RF_TX_PWR_MINUS_1_dBm   = 27,
+  GMW_RF_TX_PWR_MINUS_3_dBm   = 23,
+  GMW_RF_TX_PWR_MINUS_5_dBm   = 19,
+  GMW_RF_TX_PWR_MINUS_7_dBm   = 15,
+  GMW_RF_TX_PWR_MINUS_10_dBm  = 11,
+  GMW_RF_TX_PWR_MINUS_15_dBm  = 7,
+  GMW_RF_TX_PWR_MINUS_25_dBm  = 3
+} gmw_rf_tx_power_t;
