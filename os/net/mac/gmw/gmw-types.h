@@ -64,7 +64,7 @@ typedef struct __attribute__((packed)) gmw_schedule {
   uint32_t time;                  /* multiple of GMW_CONF_PERIOD_TIME_BASE */
   uint16_t period;                /* multiple of GMW_CONF_PERIOD_TIME_BASE */
   uint16_t n_slots;
-  uint16_t slot[TOGMW_CONF_MAX_SLOTS];
+  uint16_t slot[GMW_CONF_MAX_SLOTS];
 } gmw_schedule_t;
 
 /**
