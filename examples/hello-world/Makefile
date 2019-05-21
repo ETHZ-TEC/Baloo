@@ -1,11 +1,10 @@
 CONTIKI_PROJECT = hello-world
+MAKE_MAC = MAKE_MAC_NULLMAC
+MAKE_NET = MAKE_NET_NULLNET
+CONTIKI = ../..
 
-ifdef COOJA
 TARGET ?= sky
-CFLAGS += -DCOOJA
-else
-TARGET ?= dpp-cc430
-endif
+CFLAGS += -DPLATFORM_$(shell echo $(TARGET) | tr a-z\- A-Z_)
 
 all: $(CONTIKI_PROJECT)
 	$(info compiled for target platform $(TARGET) $(BOARD))
@@ -19,8 +18,5 @@ endif
 
 reset: $(CONTIKI_PROJECT).reset
 
-MAKE_MAC = MAKE_MAC_NULLMAC
-MAKE_NET = MAKE_NET_NULLNET
-CONTIKI = ../..
 include ../../tools/flocklab/Makefile.flocklab
 include $(CONTIKI)/Makefile.include

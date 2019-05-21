@@ -30,6 +30,10 @@
 #include "contiki.h"
 #include "gpio.h"
 
+#ifndef LED_STATUS
+#define LED_STATUS    LED1
+#endif /* LED_STATUS */
+
 /*---------------------------------------------------------------------------*/
 /* Log configuration */
 #include "sys/log.h"
@@ -49,11 +53,18 @@ PROCESS_THREAD(hello_world_process, ev, data)
   /* Setup a periodic timer that expires after 2 seconds. */
   etimer_set(&timer, CLOCK_SECOND * 2);
 
-  LED_ON(LED_STATUS);
-
   while(1) {
     LOG_INFO("hello world\n");
+
+#ifdef FLOCKLAB
+    LED_TOGGLE(FLOCKLAB_LED1);
+    LED_TOGGLE(FLOCKLAB_LED2);
+    LED_TOGGLE(FLOCKLAB_LED3);
+    LED_TOGGLE(FLOCKLAB_INT1);
+    LED_TOGGLE(FLOCKLAB_INT2);
+#else
     LED_TOGGLE(LED_STATUS);
+#endif /* FLOCKLAB */
 
     /* Wait for the periodic timer to expire and then restart the timer. */
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&timer));
