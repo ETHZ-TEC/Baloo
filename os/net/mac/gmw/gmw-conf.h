@@ -75,6 +75,16 @@
   #endif
 #endif /* GMW_CONF_MAX_CONTROL_PKT_LEN */
 
+
+/**
+ * @brief     Macro holding the maximal possible size of the _payload_ of a
+ *            data packet.
+ */
+#ifndef GMW_CONF_MAX_DATA_PKT_LEN
+#define GMW_CONF_MAX_DATA_PKT_LEN               124
+#endif /* GMW_CONF_MAX_DATA_PKT_LEN */
+
+
 /**
  * @brief     Macro holding the maximal possible size of the _payload_ of a
  *            control or data packet.
@@ -555,7 +565,11 @@
 #ifndef GMW_CONF_SLOT_TIME_BASE
 #define GMW_CONF_SLOT_TIME_BASE           500UL /* in us */
 #else
+/* Remove the protection on GMW_CONF_SLOT_TIME_BASE,
+ * it may be useful to change, and it seems to work just fine
+ *
 #error "GMW_CONF_SLOT_TIME_BASE already defined!"
+ */
 #endif
 
 /* the time base for the slot time field in clock ticks

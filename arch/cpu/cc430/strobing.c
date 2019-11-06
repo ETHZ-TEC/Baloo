@@ -64,17 +64,36 @@
 #define STROBING_TX_STOPPED
 #endif
 
+#ifdef STROBING_RX_FAIL_PIN
+#define STROBING_RX_FAIL_ON     PIN_SET(STROBING_RX_FAIL_PIN)
+#define STROBING_RX_FAIL_OFF    PIN_CLR(STROBING_RX_FAIL_PIN)
+#else
+#define STROBING_RX_FAIL_ON
+#define STROBING_RX_FAIL_OFF
+#endif
+
+#ifdef STROBING_RX_SUCCESS_PIN
+#define STROBING_RX_SUCCESS_ON    PIN_SET(STROBING_RX_SUCCESS_PIN)
+#define STROBING_RX_SUCCESS_OFF   PIN_CLR(STROBING_RX_SUCCESS_PIN)
+#else
+#define STROBING_RX_SUCCESS_ON
+#define STROBING_RX_SUCCESS_OFF
+#endif
+
 /*---------------------------------------------------------------------------*/
 typedef struct {
   uint8_t* payload;
   uint8_t  payload_len;
   uint8_t  active;
+  uint8_t  is_initiator;
   uint8_t  header_ok;
   uint8_t  header;
   uint8_t  n_rx;
   uint8_t  n_rx_started;
   uint8_t  n_tx;
   uint8_t  n_tx_max;
+  uint8_t  rx_binary[STROBING_CONF_MAX_TX_CNT/8
+                     + (STROBING_CONF_MAX_TX_CNT%8 != 0)];
 } strobing_state_t;
 /*---------------------------------------------------------------------------*/
 static strobing_state_t cfg;
@@ -97,6 +116,7 @@ strobing_start(uint8_t is_initiator,
   cfg.n_tx         = 0;
   cfg.n_tx_max     = n_tx;
   cfg.header       = STROBING_CONF_HEADER_BYTE;
+  memset(cfg.rx_binary, 0, sizeof(cfg.rx_binary));
 
   /* wake-up the radio core */
   rf1a_go_to_idle();
@@ -117,6 +137,13 @@ strobing_start(uint8_t is_initiator,
       strobing_stop();
       return;
     }
+
+    cfg.is_initiator = 1;
+
+    if(STROBING_CONF_FIRST_BYTE_AS_COUNTER) {
+      cfg.payload[0] = cfg.n_tx;
+    }
+
     rf1a_start_tx();
     rf1a_write_to_tx_fifo((uint8_t*)&cfg.header,
                           STROBING_HEADER_LEN,
@@ -124,6 +151,7 @@ strobing_start(uint8_t is_initiator,
                           cfg.payload_len);
   } else {
     /* RECEIVER */
+    cfg.is_initiator = 0;
     rf1a_start_rx();
   }
   /* note: RF_RDY bit must be cleared by the radio core before entering LPM
@@ -147,6 +175,7 @@ strobing_stop(void)
     STROBING_STOPPED;
     cfg.active = 0;
   }
+
   return cfg.n_rx;
 }
 /*---------------------------------------------------------------------------*/
@@ -160,6 +189,12 @@ uint8_t
 strobing_get_rx_cnt(void)
 {
   return cfg.n_rx;
+}
+/*---------------------------------------------------------------------------*/
+uint8_t*
+strobing_get_rx_binary(void)
+{
+  return (uint8_t*)(&(cfg.rx_binary));
 }
 /*---------------------------------------------------------------------------*/
 uint8_t
@@ -209,7 +244,9 @@ strobing_header_received(rtimer_ext_clock_t *timestamp,
   /* process the header */
   if(header[0] != STROBING_CONF_HEADER_BYTE ||
      (cfg.payload_len &&
-      ((cfg.payload_len + STROBING_HEADER_LEN) != packet_len))) {
+      ((cfg.payload_len + STROBING_HEADER_LEN) != packet_len)) ||
+      (packet_len > STROBING_CONF_PAYLOAD_LEN + STROBING_HEADER_LEN)
+      ) {
     /* the header is not ok (either wrong header signature or invalid length):
      * interrupt the reception and start a new attempt */
     rf1a_cb_rx_failed(timestamp);
@@ -225,9 +262,26 @@ strobing_rx_ended(rtimer_ext_clock_t *timestamp, uint8_t *pkt, uint8_t pkt_len)
 {
   STROBING_RX_STOPPED;
 
+  /* double-check that the pkt_len value, abort if
+   * - if it does not match what you expect, or
+   * - if it is larger than the maximal expected size
+   * */
+  if(((cfg.payload_len) && ((cfg.payload_len + STROBING_HEADER_LEN) != pkt_len)) ||
+     (pkt_len > STROBING_CONF_PAYLOAD_LEN + STROBING_HEADER_LEN)
+     ){
+    rf1a_cb_rx_failed(timestamp);
+    return;
+  }
+
+  STROBING_RX_SUCCESS_ON;
   /* we have received a packet and the CRC is correct */
   cfg.payload_len = pkt_len - STROBING_HEADER_LEN;
   uint8_t* payload = pkt + STROBING_HEADER_LEN;
+
+  if(STROBING_CONF_FIRST_BYTE_AS_COUNTER) {
+    /* log a bit stream of packet reception events */
+    cfg.rx_binary[payload[0]/8] |= 1 << (7-(payload[0]%8));
+  }
 
   /* increment the reception counter */
   cfg.n_rx++;
@@ -239,6 +293,7 @@ strobing_rx_ended(rtimer_ext_clock_t *timestamp, uint8_t *pkt, uint8_t pkt_len)
   }
   /* restart RX mode */
   rf1a_start_rx();
+  STROBING_RX_SUCCESS_OFF;
 }
 /*---------------------------------------------------------------------------*/
 void
@@ -256,6 +311,11 @@ strobing_tx_ended(rtimer_ext_clock_t *timestamp)
   if(cfg.n_tx && (cfg.n_tx == cfg.n_tx_max)) {
     strobing_stop();    /* goal reached, done! */
   } else {
+
+    if(STROBING_CONF_FIRST_BYTE_AS_COUNTER) {
+      cfg.payload[0] = cfg.n_tx;
+    }
+
     /* add some artificial delay, otherwise the receivers can't keep up */
     __delay_cycles(STROBING_CONF_TX_TO_TX_DELAY);
     rf1a_start_tx();
@@ -272,8 +332,13 @@ rf1a_cb_rx_failed(rtimer_ext_clock_t *timestamp)
 strobing_rx_failed(rtimer_ext_clock_t *timestamp)
 #endif /* STROBING_CONF_USE_RF1A_CALLBACKS */
 {
-  STROBING_RX_STOPPED;
   /* RX has failed due to invalid CRC or invalid header */
+  STROBING_RX_FAIL_ON;
+  STROBING_RX_STOPPED;
+
+  /* restart RX mode */
+  rf1a_start_rx();
+  STROBING_RX_FAIL_OFF;
 }
 /*---------------------------------------------------------------------------*/
 void
@@ -283,13 +348,34 @@ rf1a_cb_rx_tx_error(rtimer_ext_clock_t *timestamp)
 strobing_rx_tx_error(rtimer_ext_clock_t *timestamp)
 #endif /* STROBING_CONF_USE_RF1A_CALLBACKS */
 {
-  STROBING_RX_STOPPED;
-  STROBING_TX_STOPPED;
   /* unspecified RX/TX error */
   if(cfg.active) {
-    rf1a_flush_rx_fifo();
-    rf1a_flush_tx_fifo();
-    rf1a_start_rx();
+
+    /* TX failed
+     * -> This happens sometimes due to TX FIFO underflow. */
+    if(cfg.is_initiator) {
+      STROBING_TX_STOPPED;
+      /* add some artificial delay, otherwise the receivers can't keep up */
+      __delay_cycles(STROBING_CONF_TX_TO_TX_DELAY);
+      rf1a_flush_rx_fifo();
+      rf1a_flush_tx_fifo();
+      rf1a_start_tx();
+      if(STROBING_CONF_FIRST_BYTE_AS_COUNTER) {
+        cfg.payload[0] = cfg.n_tx;
+      }
+      rf1a_write_to_tx_fifo((uint8_t*)&cfg.header,
+                            STROBING_HEADER_LEN,
+                            (uint8_t*)cfg.payload, cfg.payload_len);
+
+    /* RX failed */
+    } else {
+      STROBING_RX_FAIL_ON;
+      STROBING_RX_STOPPED;
+      rf1a_flush_rx_fifo();
+      rf1a_flush_tx_fifo();
+      rf1a_start_rx();
+      STROBING_RX_FAIL_OFF;
+    }
   }
 }
 /*---------------------------------------------------------------------------*/

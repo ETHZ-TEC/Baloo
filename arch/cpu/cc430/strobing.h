@@ -43,6 +43,11 @@
 #define STROBING_CONF_HEADER_BYTE             0x44
 #endif /* STROBING_CONF_HEADER_BYTE */
 
+/* max. allowed payload length */
+#ifndef STROBING_CONF_PAYLOAD_LEN
+#define STROBING_CONF_PAYLOAD_LEN             100
+#endif /* GLOSSY_CONF_PAYLOAD_LEN */
+
 /* define the rf1a_cb_... functions within strobing.c? if disabled, callback
  * functions will be named strobing_...() instead */
 #ifndef STROBING_CONF_USE_RF1A_CALLBACKS
@@ -57,6 +62,11 @@
 #define STROBING_CONF_TX_TO_TX_DELAY          300   /* MCLK ticks */
 #endif /* STROBING_CONF_TX_TO_TX_DELAY */
 
+#ifndef STROBING_CONF_FIRST_BYTE_AS_COUNTER
+#define STROBING_CONF_FIRST_BYTE_AS_COUNTER   0
+#endif /* STROBING_CONF_FIRST_BYTE_AS_COUNTER */
+
+#define STROBING_CONF_MAX_TX_CNT              256
 
 /**
  * @brief       start strobing
@@ -86,6 +96,11 @@ uint8_t strobing_is_active(void);
  * @brief get the number of received packets during the last slot
  */
 uint8_t strobing_get_rx_cnt(void);
+
+/**
+ * @brief get the bit stream of received packets during the last slot
+ */
+uint8_t* strobing_get_rx_binary(void);
 
 /**
  * @brief get the number of received packets during the last slot

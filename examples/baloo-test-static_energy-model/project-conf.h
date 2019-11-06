@@ -40,8 +40,10 @@
 #define HOST_ID                         15
 
 #define NODE_LIST  \
- { 1,2,3,4,6,7,8,10,11,13,14,15,16,17,18,19,20,22,23,24,25,26,27,28,32,33 }
-#define NUM_NODES                       26
+// { 1,2,3,4,6,7,8,10,11,13,14,15,16,17,18,19,20,22,23,24,25,26,27,28,32,33 }
+ { 1,2,3,4,6,8,10,11,13,15,16,17,18,19,20,22,23,24,25,26,27,28,32,33 }
+//#define NUM_NODES                       26
+#define NUM_NODES                       24
 
 /* to compile for flocklab, pass FLOCKLAB=1 to the make command */
 

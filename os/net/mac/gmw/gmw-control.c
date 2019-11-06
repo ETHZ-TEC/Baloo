@@ -268,7 +268,7 @@ config_init(gmw_config_t* config)
   config->channel_hopping_mode = 0;
   config->max_packet_length    = GMW_CONF_MAX_DATA_PKT_LEN +
                                  GMW_CONF_RF_OVERHEAD;
-  config->primitive          = 0;
+  config->primitive            = 0;
   config->gap_time             = GMW_US_TO_GAP_TIME(GMW_CONF_T_GAP);
   config->slot_time            = GMW_US_TO_SLOT_TIME(GMW_CONF_T_DATA);
 }

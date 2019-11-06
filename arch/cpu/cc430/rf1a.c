@@ -32,6 +32,18 @@
  */
 
 
+/*
+ * /!\ Warning /!\
+ * The packet length, passed as argument to `rf1a_cb_rx_ended()` and
+ * `rf1a_cb_header_received()` is unreliable! If possible, always check the
+ * obtained value against the packet length you expect.
+ * In all cases, make sure you implement a "max packet length" check in your
+ * callback implementations, such that you don't overwrite other variables when
+ * memcpy the received payload...
+ *
+ */
+
+
 #include "contiki.h"
 #include "sys/energest.h"
 #include "sys/dc-stat.h"

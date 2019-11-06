@@ -78,6 +78,21 @@
 #define STROBING_TX_STOPPED
 #endif
 
+#ifdef STROBING_RX_FAIL_PIN
+#define STROBING_RX_FAIL_ON   PIN_SET(STROBING_RX_FAIL_PIN)
+#define STROBING_RX_FAIL_OFF   PIN_CLR(STROBING_RX_FAIL_PIN)
+#else
+#define STROBING_RX_FAIL_ON
+#define STROBING_RX_FAIL_OFF
+#endif
+
+#ifdef STROBING_RX_SUCCESS_PIN
+#define STROBING_RX_SUCCESS_ON    PIN_SET(STROBING_RX_SUCCESS_PIN)
+#define STROBING_RX_SUCCESS_OFF   PIN_CLR(STROBING_RX_SUCCESS_PIN)
+#else
+#define STROBING_RX_SUCCESS_ON
+#define STROBING_RX_SUCCESS_OFF
+#endif
 /*---------------------------------------------------------------------------*/
 /* --------------------------- Macros and defines -------------------------- */
 /*---------------------------------------------------------------------------*/
@@ -91,10 +106,9 @@
 /* do not change */
 #define STROBING_HEADER_LEN             3     /* header + footer (RSSI/CRC) */
 
-#define STROBING_MAX_PACKET_LEN         (STROBING_CONF_PAYLOAD_LEN + \
-                                         STROBING_HEADER_LEN)
+#define STROBING_MAX_PACKET_LEN         255
 
-#if STROBING_MAX_PACKET_LEN > 255
+#if STROBING_CONF_PAYLOAD_LEN > (STROBING_MAX_PACKET_LEN - STROBING_HEADER_LEN)
 #error "invalid packet length for strobing"
 #endif /* STROBING_MAX_PACKET_LEN */
 
@@ -158,6 +172,8 @@ static uint16_t rx_timeout,
                 bad_length,
                 bad_header,
                 bad_crc;
+static uint8_t  rx_binary[ STROBING_CONF_MAX_TX_CNT/8
+                           + (STROBING_CONF_MAX_TX_CNT%8 != 0)];
 
 /*---------------------------------------------------------------------------*/
 /*---------------------------- Function prototypes --------------------------*/
@@ -225,9 +241,11 @@ radio_flush_rx(void)
 static inline void
 radio_restart_rx(void)
 {
+  STROBING_RX_FAIL_ON;
   STROBING_RX_STOPPED;
   state = STROBING_STATE_ABORTED;
   radio_flush_rx();
+  STROBING_RX_FAIL_OFF;
 }
 /*---------------------------------------------------------------------------*/
 static inline void
@@ -280,6 +298,7 @@ strobing_start(uint8_t is_initiator,
   tx_max               = n_tx_max;
   tx_cnt = 0;
   rx_cnt = 0;
+  memset(rx_binary, 0, sizeof(rx_binary));
 
   CC2420_DISABLE_FIFOP_INT();
   CC2420_CLEAR_FIFOP_INT();
@@ -302,6 +321,9 @@ strobing_start(uint8_t is_initiator,
   if(is_initiator && strobing_payload_len) {
     // initiator: copy the application data to the strobing_payload field
     memcpy(&STROBING_DATA_FIELD, strobing_payload, strobing_payload_len);
+    if(STROBING_CONF_FIRST_BYTE_AS_COUNTER) {
+      STROBING_DATA_FIELD = tx_cnt;
+    }
     // set state
     state = STROBING_STATE_READY_FOR_TX;
     // write the packet to the TXFIFO
@@ -498,7 +520,13 @@ strobing_end_rx(void)
 #else
   if(STROBING_CRC_FIELD & STROBING_CRC_OK) {
 #endif /* COOJA */
-    // packet correctly received
+
+    /* packet correctly received */
+    STROBING_RX_SUCCESS_ON;
+    if(STROBING_CONF_FIRST_BYTE_AS_COUNTER) {
+      /* log a bit stream of packet reception events */
+      rx_binary[STROBING_DATA_FIELD/8] |= 1 << (7-(STROBING_DATA_FIELD%8));
+    }
     rx_cnt++;
     if(!packet_len) {
       packet_len           = packet_len_tmp;
@@ -511,10 +539,13 @@ strobing_end_rx(void)
     state = STROBING_STATE_WAITING;
     radio_flush_rx();
     radio_start_rx();
+    STROBING_RX_SUCCESS_OFF;
 
   } else {
+    /* signal reception failure */
+    STROBING_RX_FAIL_ON;
     bad_crc++;
-    // packet corrupted, abort the transmission before it actually starts
+    STROBING_RX_FAIL_OFF;
   }
 }
 /*---------------------------------------------------------------------------*/
@@ -538,6 +569,9 @@ strobing_end_tx(void)
     state = STROBING_STATE_OFF;
 
   } else {
+    if(STROBING_CONF_FIRST_BYTE_AS_COUNTER) {
+      STROBING_DATA_FIELD = tx_cnt;
+    }
     // restart TX with a delay
     state = STROBING_STATE_READY_FOR_TX;
     __delay_cycles(STROBING_CONF_TX_TO_TX_DELAY);
@@ -553,6 +587,12 @@ uint8_t
 strobing_get_rx_cnt(void)
 {
   return rx_cnt;
+}
+/*---------------------------------------------------------------------------*/
+uint8_t*
+strobing_get_rx_binary(void)
+{
+  return (uint8_t*)(&rx_binary);
 }
 /*---------------------------------------------------------------------------*/
 uint8_t

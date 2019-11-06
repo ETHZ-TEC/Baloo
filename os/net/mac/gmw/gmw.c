@@ -580,7 +580,7 @@ BOOTSTRAP_MODE:
           }
         } while(1);
         /* schedule received! */
-        DEBUG_PRINT_MSG_NOW("sched rcv (%u %u)", gmw_payload[0], gmw_payload[1]);
+        //DEBUG_PRINT_MSG_NOW("sched rcv (%u %u)", gmw_payload[0], gmw_payload[1]);
       } else {
         /* max packet length was set at end of last round */
         GMW_RCV_CONTROL();

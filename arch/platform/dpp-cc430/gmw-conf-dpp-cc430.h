@@ -154,12 +154,12 @@ typedef enum
 
 typedef enum
 {
-  GMW_RF_TX_POWER_MINUS_30_dBm = 0,
-  GMW_RF_TX_POWER_MINUS_12_dBm =  1,
-  GMW_RF_TX_POWER_MINUS_6_dBm =  2,
-  GMW_RF_TX_POWER_0_dBm =  3,
-  GMW_RF_TX_POWER_PLUS_10_dBm =  4,
-  GMW_RF_TX_POWER_MAX =  5
+  GMW_RF_TX_POWER_MINUS_30_dBm  =  0,
+  GMW_RF_TX_POWER_MINUS_12_dBm  =  1,
+  GMW_RF_TX_POWER_MINUS_6_dBm   =  2,
+  GMW_RF_TX_POWER_0_dBm         =  3,
+  GMW_RF_TX_POWER_PLUS_10_dBm   =  4,
+  GMW_RF_TX_POWER_MAX           =  5
 } gmw_rf_tx_power_t;
 
 

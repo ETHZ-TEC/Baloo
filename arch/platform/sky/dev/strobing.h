@@ -64,6 +64,11 @@
 #define STROBING_CONF_TX_TO_TX_DELAY    500   /* MCLK ticks */
 #endif /* STROBING_CONF_TX_TO_TX_DELAY */
 
+#ifndef STROBING_CONF_FIRST_BYTE_AS_COUNTER
+#define STROBING_CONF_FIRST_BYTE_AS_COUNTER     0
+#endif /* STROBING_CONF_FIRST_BYTE_AS_COUNTER */
+
+#define STROBING_CONF_MAX_TX_CNT        256
 
 /* ----------------------- Application interface -------------------- */
 
@@ -95,6 +100,11 @@ uint8_t strobing_is_active(void);
  * @brief get the number of received packets during the last slot
  */
 uint8_t strobing_get_rx_cnt(void);
+
+/**
+ * @brief get the bit stream of received packets during the last slot
+ */
+uint8_t* strobing_get_rx_binary(void);
 
 /**
  * @brief how many times the packet reception has been started in the last slot
