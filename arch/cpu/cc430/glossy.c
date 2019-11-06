@@ -211,17 +211,29 @@ process_glossy_header(uint8_t *pkt, uint8_t pkt_len, uint8_t crc_ok)
        * it matches the received one */
       return 0;
     }
-    if((g.payload_len != GLOSSY_UNKNOWN_PAYLOAD_LEN) &&
-       (g.payload_len != (pkt_len - GLOSSY_HEADER_LEN(g.header.pkt_type)))) {
+    if(((g.payload_len != GLOSSY_UNKNOWN_PAYLOAD_LEN) &&
+        (g.payload_len != (pkt_len - GLOSSY_HEADER_LEN(g.header.pkt_type))))
+        || (pkt_len > (GLOSSY_CONF_PAYLOAD_LEN + GLOSSY_MAX_HEADER_LEN))
+       ) {
       /* keep processing only if the local payload_len value is either unknown
        * or it matches the received one */
       return 0;
+    }
+    if(pkt_len > (GLOSSY_CONF_PAYLOAD_LEN + GLOSSY_MAX_HEADER_LEN)) {
+      return 0;
+      /* keep processing only if the received packet length make sense
+       * (rf1a driver had been found unreliable)*/
     }
     /* the header is ok */
     g.header_ok = 1;
   }
 
   if(crc_ok) {
+    if(pkt_len > (GLOSSY_CONF_PAYLOAD_LEN + GLOSSY_MAX_HEADER_LEN)) {
+      return 0;
+      /* keep processing only if the received packet length make sense
+       * (rf1a driver had been found unreliable)*/
+    }
     /* we have received the entire packet (and the CRC was ok) */
     /* store the received header (all the unknown values are also learned) */
     g.header = *rcvd_header;
@@ -623,50 +635,16 @@ glossy_get_noise_floor(void)
 {
   return (int8_t)g.stats.last_flood_rssi_noise;
 }
-
-
 /*---------------------------------------------------------------------------*/
-/*---------------------------------------------------------------------------*/
-/*---------------------------------------------------------------------------*/
-/*---------------------------------------------------------------------------*/
-/*---------------------------------------------------------------------------*/
-
-
-
 uint16_t glossy_get_header(void)
 {
   return ( (g.header.pkt_type << 8) | (g.header.relay_cnt) );
 }
-
+/*---------------------------------------------------------------------------*/
 int8_t glossy_get_sync_mode(void)
 {
   return WITH_SYNC();
 }
-
-int8_t glossy_get_n_T_slot(void)
-{
-  return g.n_T_slot;
-}
-
-uint32_t glossy_get_T_slot_estimated(void)
-{
-  return g.T_slot_estimated;
-}
-
-uint64_t glossy_get_T_slot_sum(void)
-{
-  return g.T_slot_sum;
-}
-
-
-/*---------------------------------------------------------------------------*/
-/*---------------------------------------------------------------------------*/
-/*---------------------------------------------------------------------------*/
-/*---------------------------------------------------------------------------*/
-/*---------------------------------------------------------------------------*/
-/*---------------------------------------------------------------------------*/
-
-
 /*---------------------------------------------------------------------------*/
 void
 glossy_reset_stats(void)
