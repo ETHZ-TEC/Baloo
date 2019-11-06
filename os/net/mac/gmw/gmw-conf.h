@@ -553,12 +553,14 @@
 
 /* the time base for the slot time field in the config is 500 us */
 #ifndef GMW_CONF_SLOT_TIME_BASE
-#define GMW_CONF_SLOT_TIME_BASE           500UL /* in ms */
+#define GMW_CONF_SLOT_TIME_BASE           500UL /* in us */
 #else
 #error "GMW_CONF_SLOT_TIME_BASE already defined!"
 #endif
 
-/* the time base for the slot time field in clock ticks */
+/* the time base for the slot time field in clock ticks
+ * -> Rounded down, thus "looses" up to 1 tick per GMW_CONF_SLOT_TIME_BASE
+ * */
 #ifndef GMW_CONF_SLOT_TIME_BASE_CLOCK
 #define GMW_CONF_SLOT_TIME_BASE_CLOCK     GMW_CONF_SLOT_TIME_BASE * \
                                           GMW_RTIMER_SECOND / (1000000UL)

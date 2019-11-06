@@ -51,6 +51,9 @@
 #include "leds.h"
 /*---------------------------------------------------------------------------*/
 
+#define RTIMER_EXT_HF_TO_US(t)    ((t * 1000000) / RTIMER_EXT_SECOND_HF)
+
+
 /*---------------------------------------------------------------------------*/
 /*- GMW VARIABLES -----------------------------------------------------------*/
 static gmw_protocol_impl_t  host_impl;
@@ -125,71 +128,43 @@ PROCESS_THREAD(app_process, ev, data)
   /* start the GMW thread */
   gmw_start(&pre_process, &app_process, &host_impl, &src_impl);
 
-  /* log the node list */
-  if(slots_per_round == 5) {
-    DEBUG_PRINT_INFO("L: %u %u %u %u %u ",
-                     static_nodes_used[0],
-                     static_nodes_used[1],
-                     static_nodes_used[2],
-                     static_nodes_used[3],
-                     static_nodes_used[4]);
-  } else if(slots_per_round == 15) {
-    DEBUG_PRINT_INFO("L: %u %u %u %u %u "
-        "%u %u %u %u %u "
-        "%u %u %u %u %u ",
-        static_nodes_used[0],
-        static_nodes_used[1],
-        static_nodes_used[2],
-        static_nodes_used[3],
-        static_nodes_used[4],
-        static_nodes_used[5],
-        static_nodes_used[6],
-        static_nodes_used[7],
-        static_nodes_used[8],
-        static_nodes_used[9],
-        static_nodes_used[10],
-        static_nodes_used[11],
-        static_nodes_used[12],
-        static_nodes_used[13],
-        static_nodes_used[14]);
-  } else if(slots_per_round == 30) {
-    DEBUG_PRINT_INFO("L: %u %u %u %u %u "
-        "%u %u %u %u %u "
-        "%u %u %u %u %u "
-        "%u %u %u %u %u "
-        "%u %u %u %u %u "
-        "%u %u %u %u %u ",
-        static_nodes_used[0],
-        static_nodes_used[1],
-        static_nodes_used[2],
-        static_nodes_used[3],
-        static_nodes_used[4],
-        static_nodes_used[5],
-        static_nodes_used[6],
-        static_nodes_used[7],
-        static_nodes_used[8],
-        static_nodes_used[9],
-        static_nodes_used[10],
-        static_nodes_used[11],
-        static_nodes_used[12],
-        static_nodes_used[13],
-        static_nodes_used[14],
-        static_nodes_used[15],
-        static_nodes_used[16],
-        static_nodes_used[17],
-        static_nodes_used[18],
-        static_nodes_used[19],
-        static_nodes_used[20],
-        static_nodes_used[21],
-        static_nodes_used[22],
-        static_nodes_used[23],
-        static_nodes_used[24],
-        static_nodes_used[25],
-        static_nodes_used[26],
-        static_nodes_used[27],
-        static_nodes_used[28],
-        static_nodes_used[29]);
-  }
+  /* log the node list - 0 means "unused" */
+  DEBUG_PRINT_INFO("L: %u %u %u %u %u "
+      "%u %u %u %u %u "
+      "%u %u %u %u %u "
+      "%u %u %u %u %u "
+      "%u %u %u %u %u "
+      "%u %u %u %u %u ",
+      static_nodes_used[0],
+      static_nodes_used[1],
+      static_nodes_used[2],
+      static_nodes_used[3],
+      static_nodes_used[4],
+      static_nodes_used[5],
+      static_nodes_used[6],
+      static_nodes_used[7],
+      static_nodes_used[8],
+      static_nodes_used[9],
+      static_nodes_used[10],
+      static_nodes_used[11],
+      static_nodes_used[12],
+      static_nodes_used[13],
+      static_nodes_used[14],
+      static_nodes_used[15],
+      static_nodes_used[16],
+      static_nodes_used[17],
+      static_nodes_used[18],
+      static_nodes_used[19],
+      static_nodes_used[20],
+      static_nodes_used[21],
+      static_nodes_used[22],
+      static_nodes_used[23],
+      static_nodes_used[24],
+      static_nodes_used[25],
+      static_nodes_used[26],
+      static_nodes_used[27],
+      static_nodes_used[28],
+      static_nodes_used[29]);
 
   debug_print_poll();
 
@@ -260,7 +235,7 @@ on_control_slot_post_callback(gmw_control_t* in_out_control,
   /* The first time a control packet is received,
    * fill the static schedule to send to the middleware
    */
-  if(!is_synced) {
+  if(!is_synced && (event == GMW_EVT_CONTROL_RCVD)) {
     in_out_control->schedule = control.schedule;
     in_out_control->config = control.config;
     is_synced = 1;
@@ -274,9 +249,38 @@ on_control_slot_post_callback(gmw_control_t* in_out_control,
   /* Save a local copy of the control*/
   control = *in_out_control;
 
-  if(node_id != HOST_ID) {
-    DEBUG_PRINT_INFO("C: %i H %u", HOST_ID, stats_pt->relay_cnt);
+
+
+  if((node_id != HOST_ID)  && (event == GMW_EVT_CONTROL_RCVD)) {
+    //DEBUG_PRINT_INFO("C: %i H %u", HOST_ID, stats_pt->relay_cnt);
+    // -> Don't know why, but stats does not return the correct values...
+    DEBUG_PRINT_INFO("C: %i H %u", HOST_ID, glossy_get_relay_cnt());
   }
+
+  /* Debugging statements
+   *
+  DEBUG_PRINT_INFO("t_ref: %llu HF ticks",
+                   (uint64_t)glossy_get_t_ref());
+  DEBUG_PRINT_INFO("t_ref: %llu us",
+                   RTIMER_EXT_HF_TO_US((uint64_t)glossy_get_t_ref()));
+
+  DEBUG_PRINT_INFO("relay_cnt_t_ref: %u",
+                   glossy_get_relay_cnt());
+
+  DEBUG_PRINT_INFO("T_slot_sum: %llu HF ticks",
+                   (uint64_t)glossy_get_T_slot_sum());
+  DEBUG_PRINT_INFO("T_slot_sum: %llu us",
+                   RTIMER_EXT_HF_TO_US((uint64_t)glossy_get_T_slot_sum()));
+
+  DEBUG_PRINT_INFO("n_T_slot: %u",
+                   glossy_get_n_T_slot());
+
+  DEBUG_PRINT_INFO("T_slot_estimated: %lu HF ticks",
+                   glossy_get_T_slot_estimated());
+
+  DEBUG_PRINT_INFO("RX-TX errors: %u ",
+                   glossy_get_n_errors());
+   */
 
   leds_on(LEDS_GREEN);
   leds_off(LEDS_RED);
@@ -324,18 +328,20 @@ on_slot_post_callback(uint8_t   slot_index,
   if( !is_initiator ) {
     if( event == GMW_EVT_PKT_OK ) {
       XP_GPIO_OFF;
-      if ( !bolt_write( payload, len ) ){
-        DEBUG_PRINT_ERROR("ERROR: bolt_write failed");
+      if ( !bolt_write( payload, 1 ) ){
+        /* Don't print error, this fills up the debug buffer... */
+        // DEBUG_PRINT_ERROR("ERROR: bolt_write failed");
       }
+      //DEBUG_PRINT_INFO("msg: %u", payload[0]);
       XP_GPIO_ON;
       /* delay to account for bolt write */
       //__delay_cycles(MCLK_SPEED/1000000 * 125);   /* wait 125 us */
-      DEBUG_PRINT_INFO("S: %i H %u", static_nodes_used[slot_index], stats_pt->relay_cnt);
+      DEBUG_PRINT_INFO("S: %i H %u", static_nodes_used[slot_index], glossy_get_relay_cnt());
     } else {
       DEBUG_PRINT_INFO("S: %i F %u", static_nodes_used[slot_index], event);
     }
   } else {
-    DEBUG_PRINT_INFO("S: %i I", static_nodes_used[slot_index]);
+    DEBUG_PRINT_INFO("S: %i I (%u)", static_nodes_used[slot_index], payload[0]);
   }
 
   XP_GPIO_OFF;
@@ -359,9 +365,8 @@ src_on_bootstrap_timeout(void)
 {
   XP_GPIO_ON;
 
-  if(!is_synced) {
-    DCSTAT_RESET;
-  }
+  /* reset energy stats whenever we go back to bootstrap */
+  DCSTAT_RESET;
 
   leds_off(LEDS_GREEN);
   leds_on(LEDS_RED);
@@ -392,6 +397,7 @@ app_control_init(gmw_control_t* control)
        * static schedule and config
        */
       control->user_bytes[0] = trigger_counter;
+      control->user_bytes[1] = 255; // dummy byte
     }
 }
 /*---------------------------------------------------------------------------*/
@@ -421,6 +427,7 @@ app_control_static_update(gmw_control_t* control)
    * which to the single-slot rounds */
   if(!control->user_bytes[0]) {
     control->schedule.n_slots = 1;
+    GMW_CONTROL_SET_CONFIG(control);
     control->schedule.slot[0] = static_nodes_used[round_counter];
     GMW_CONTROL_SET_USER_BYTES(control);
     round_counter = (round_counter + 1) % slots_per_round;

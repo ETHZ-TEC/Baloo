@@ -99,7 +99,7 @@
 #endif /* GLOSSY_CONF_ALWAYS_RELAY_CNT */
 
 #define GLOSSY_HEADER_LEN(pkt_type) \
-                          (( (GET_SYNC(pkt_type) == 1) || (WITH_RELAY_CNT()) ) \
+                          (( (WITH_SYNC()) || (WITH_RELAY_CNT()) ) \
                               ? 2 : 1 )
 
 /* mainly for debugging purposes */
@@ -240,7 +240,8 @@ estimate_T_slot(uint8_t pkt_len)
   /* T_slot = T_rx + T_rx2tx + tau1 = T_tx + T_tx2rx - tau1 */
   //rtimer_ext_clock_t T_tx_estim = T_TX_BYTE * (pkt_len + 3) + T_TX_OFFSET;
   /* perform calculations in 32-bit, faster */
-  uint32_t T_tx_estim = T_TX_BYTE * ((uint32_t)pkt_len + 3) + T_TX_OFFSET;
+  uint32_t T_tx_estim = (uint32_t)T_TX_BYTE * ((uint32_t)pkt_len + 3)
+                      + (uint32_t)T_TX_OFFSET;
   return NS_TO_RTIMER_EXT_HF_32(T_tx_estim + T2R - TAU1);
 }
 /*---------------------------------------------------------------------------*/
@@ -329,6 +330,7 @@ glossy_start(uint16_t initiator_id,
   g.t_ref_updated     = 0;
   g.T_slot_sum        = 0;
   g.n_T_slot          = 0;
+  g.T_slot_estimated  = 0;
 
 #if GLOSSY_CONF_COLLECT_STATS
   g.stats.last_flood_relay_cnt    = 0;
@@ -361,6 +363,7 @@ glossy_start(uint16_t initiator_id,
     /* if instructed so, perform a manual calibration */
     rf1a_manual_calibration();
   }
+
   rf1a_set_header_len_rx(GLOSSY_HEADER_LEN(g.header.pkt_type));
   
   volatile uint16_t timeout;
@@ -376,9 +379,7 @@ glossy_start(uint16_t initiator_id,
 #if GLOSSY_CONF_SETUPTIME_WITH_SYNC
     // busy wait for the setup time to pass
     if(with_sync) {
-      //GLOSSY_STOPPED;
       while((uint16_t)(rtimer_ext_now_lf_hw() - setup_time_start) < GLOSSY_SYNC_SETUP_TICKS);
-      //GLOSSY_STARTED;
     }
 #endif /* GLOSSY_CONF_SETUPTIME_WITH_SYNC */
     /* start the first transmission */
@@ -446,21 +447,6 @@ glossy_stop(void)
         g.t_ref -= (uint32_t)g.relay_cnt_t_ref * g.T_slot_estimated;
       }
     }
-
-//     if(g.n_rx > 0) {
-//       DEBUG_PRINT_VERBOSE("Glossy stopped: in=%u, pl=%u, n=%u, s=%u, rc_rx=%u,"
-//                           " rc_tx=%u",
-//                           g.initiator_id, g.payload_len,
-//                           GET_N_TX_MAX(g.header.pkt_type),
-//                           GET_SYNC(g.header.pkt_type), g.relay_cnt_last_rx,
-//                           g.relay_cnt_last_tx);
-//       DEBUG_PRINT_VERBOSE("Glossy n_Ts=%u, rc_tref=%u, Ts=%llu, tref=%llu, "
-//                           "Ts_est=%lu", g.n_T_slot, g.relay_cnt_t_ref,
-//                           (g.n_T_slot > 0) ? (g.T_slot_sum / g.n_T_slot) : 0,
-//                           g.t_ref, g.T_slot_estimated);
-//     } else {
-//       DEBUG_PRINT_VERBOSE("Glossy stopped (n_rx=0)");
-//     }
 
 #if GLOSSY_CONF_COLLECT_STATS
     /* stats */
@@ -637,6 +623,50 @@ glossy_get_noise_floor(void)
 {
   return (int8_t)g.stats.last_flood_rssi_noise;
 }
+
+
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+
+
+
+uint16_t glossy_get_header(void)
+{
+  return ( (g.header.pkt_type << 8) | (g.header.relay_cnt) );
+}
+
+int8_t glossy_get_sync_mode(void)
+{
+  return WITH_SYNC();
+}
+
+int8_t glossy_get_n_T_slot(void)
+{
+  return g.n_T_slot;
+}
+
+uint32_t glossy_get_T_slot_estimated(void)
+{
+  return g.T_slot_estimated;
+}
+
+uint64_t glossy_get_T_slot_sum(void)
+{
+  return g.T_slot_sum;
+}
+
+
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+
+
 /*---------------------------------------------------------------------------*/
 void
 glossy_reset_stats(void)
@@ -691,12 +721,18 @@ glossy_tx_started(rtimer_ext_clock_t *timestamp)
   GLOSSY_TX_STARTED;
   g.t_tx_start = *timestamp;
 
+  /* first transmission: estimate the slot length based on the packet length
+   * -> Moved to cb_rx_ended
+   *    This allows T_slot_estimated to be correctly computed whenever t_ref
+   *    is updated. Otherwise, it may be that T_slot_estimated is not updated
+   *    in case the flood is terminated before the node does any TX
+   *
   if(g.n_tx == 0) {
-    /* first transmission: estimate the slot length based on the packet
-     * length */
+
     g.T_slot_estimated = estimate_T_slot(GLOSSY_HEADER_LEN(g.header.pkt_type) +
                                          g.payload_len);
   }
+  */
 }
 /*---------------------------------------------------------------------------*/
 void
@@ -796,6 +832,9 @@ glossy_rx_ended(rtimer_ext_clock_t *timestamp, uint8_t *pkt, uint8_t pkt_len)
         /* t_ref has not been updated yet: update it */
         update_t_ref(g.t_rx_start - NS_TO_RTIMER_EXT_HF(TAU1),
                      g.header.relay_cnt - 1);
+        /* Estimate the Glossy slot length */
+        g.T_slot_estimated = estimate_T_slot(
+            GLOSSY_HEADER_LEN(g.header.pkt_type) + g.payload_len);
       }
 
       if((g.relay_cnt_last_rx == g.relay_cnt_last_tx + 1) && (g.n_tx > 0)) {

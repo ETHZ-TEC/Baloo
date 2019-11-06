@@ -191,8 +191,8 @@ gmw_sync_state_t next_state[NUM_OF_SYNC_EVENTS][NUM_OF_SYNC_STATES] =
             GMW_WITH_RF_CAL);\
   GMW_NOISE_DETECTION();\
   GMW_WAIT_UNTIL(rt->time + GMW_US_TO_TICKS(GMW_CONF_T_CONTROL));\
-  GMW_STOP();\
   GMW_GPIO_CONTROL_SEND_END(); \
+  GMW_STOP();\
 }
 
 #define GMW_RCV_CONTROL() \
@@ -204,8 +204,8 @@ gmw_sync_state_t next_state[NUM_OF_SYNC_EVENTS][NUM_OF_SYNC_STATES] =
   GMW_NOISE_DETECTION();\
   GMW_WAIT_UNTIL(rt->time + \
               GMW_US_TO_TICKS(GMW_CONF_T_CONTROL + GMW_CONF_T_GUARD_ROUND)); \
-  GMW_STOP();\
   GMW_GPIO_CONTROL_RECV_END(); \
+  GMW_STOP();\
 }
 
 #define GMW_SEND_PACKET() \
@@ -216,8 +216,8 @@ gmw_sync_state_t next_state[NUM_OF_SYNC_EVENTS][NUM_OF_SYNC_STATES] =
                  GMW_WITHOUT_SYNC, GMW_WITHOUT_RF_CAL);\
   GMW_NOISE_DETECTION();\
   GMW_WAIT_UNTIL(rt->time + current_slot_time);\
+  GMW_GPIO_PACKET_SEND_END();\
   GMW_STOP_PRIM();\
-  GMW_GPIO_PACKET_SEND_END(); \
 }
 
 #define GMW_RCV_PACKET() \
@@ -230,8 +230,8 @@ gmw_sync_state_t next_state[NUM_OF_SYNC_EVENTS][NUM_OF_SYNC_STATES] =
   GMW_NOISE_DETECTION();\
   GMW_WAIT_UNTIL(rt->time + current_slot_time + \
                  GMW_US_TO_TICKS(GMW_CONF_T_GUARD_SLOT));\
+  GMW_GPIO_PACKET_RECV_END();\
   GMW_STOP_PRIM();\
-  GMW_GPIO_PACKET_RECV_END(); \
 }
 /*---------------------------------------------------------------------------*/
 /**
@@ -528,9 +528,14 @@ PT_THREAD(gmw_thread(gmw_rtimer_t *rt))
 
       if(sync_state == GMW_BOOTSTRAP) {
 BOOTSTRAP_MODE:
+
+        /* Mark the round as "ended" before the next bootstrapping attempt */
+        GMW_GPIO_ROUND_END;
+
   #if GMW_CONF_USE_DRIFT_COMPENSATION
         period_last = 0;
   #endif /* GMW_CONF_USE_DRIFT_COMPENSATION */
+
         /* Reset the part of the control that is supposed to be received
          * TODO right now, dont erase anything if static, extend to clean the
          * user bytes */
@@ -539,14 +544,22 @@ BOOTSTRAP_MODE:
         }
         stats.bootstrap_cnt++;
         is_current_config_valid = 0;
+
         /* synchronize first! wait for the first control packet... */
         do {
+
+          /* "Restart" the round before the next bootstrapping attempt */
+          GMW_GPIO_ROUND_START;
+          /* reset the measurement of t_round_last */
+          start_of_current_round = GMW_RTIMER_NOW();
+
           /* try to receive a control packet */
           GMW_RCV_CONTROL();
 
           /* did we receive a synced (setting t_ref) glossy packet? */
           if(!GMW_IS_T_REF_UPDATED()) {
             uint32_t time_to_sleep_in_ms = gmw_impl->on_bootstrap_timeout();
+
             if(time_to_sleep_in_ms != 0) {
               /* we go to sleep */
               DEBUG_PRINT_MSG_NOW("going to sleep for %lums",
@@ -557,12 +570,17 @@ BOOTSTRAP_MODE:
                              GMW_MS_TO_TICKS(time_to_sleep_in_ms));
               GMW_AFTER_DEEPSLEEP();
             }
+
+            /* Mark the round as "ended" before the next bootstrapping attempt */
+            GMW_GPIO_ROUND_END;
+
           } else {
             /* we received something, try to interpret it as a control pkt */
             break;
           }
         } while(1);
         /* schedule received! */
+        DEBUG_PRINT_MSG_NOW("sched rcv (%u %u)", gmw_payload[0], gmw_payload[1]);
       } else {
         /* max packet length was set at end of last round */
         GMW_RCV_CONTROL();
@@ -581,6 +599,8 @@ BOOTSTRAP_MODE:
         global_time  = control.schedule.time;
         rx_timestamp = t_ref;
         sync_event   = GMW_EVT_CONTROL_RCVD;
+
+        //DEBUG_PRINT_MSG_NOW("t_ref: %llu", t_ref);
 
         /* reconstruct the control struct */
         if(!gmw_control_decompile_from_buffer(&control, gmw_payload,
@@ -609,11 +629,13 @@ BOOTSTRAP_MODE:
            */
           is_current_config_valid = 1;
         } else if(!is_current_config_valid) {
+          DEBUG_PRINT_MSG_NOW("Config is not valid... "
+                              "Back to bootstrap.");
           /* we need a valid config */
           goto BOOTSTRAP_MODE;
         }
       } else {
-        DEBUG_PRINT_WARNING("Schedule missed or corrupted.");
+        DEBUG_PRINT_MSG_NOW("Schedule missed or corrupted.");
         /* mark config as non valid */
         is_current_config_valid = 0;
         /* we can only estimate t_ref */
@@ -670,7 +692,7 @@ BOOTSTRAP_MODE:
       t_start = t_ref;
     } /* end of !GMW_IS_HOST */
 
-    /* --- PREPARE FOR DATA SLOTS ---*/
+    /* --- PREPARE FOR DATA SLOTS --- */
 
     /* reset variables */
     n_missed_slots = 0;
@@ -718,6 +740,7 @@ BOOTSTRAP_MODE:
 
         /* set t_now, this allows us to determine if we missed the slot */
         t_now = GMW_RTIMER_NOW();
+
         if(skip_event == GMW_EVT_SKIP_SLOT) {
           /* Instruction to skip the slot, but we have payload to send... */
           pkt_event   = GMW_EVT_PKT_SKIPPED;
@@ -747,9 +770,17 @@ BOOTSTRAP_MODE:
           /* RECEIVER */
           gmw_rtimer_clock_t slot_start_with_guard = slot_start -
                                         GMW_US_TO_TICKS(GMW_CONF_T_GUARD_SLOT);
+
+          /* if we have passed the guard time, suppress the guard time */
           if(t_now >= slot_start_with_guard) {
             slot_start_with_guard = slot_start;
           }
+
+          /* Sanity-check: this should never happen */
+          if(slot_start <= t_now) {
+            DEBUG_PRINT_MSG_NOW("ERROR: Rcv miss start, timer set in the past...");
+          }
+
           GMW_WAIT_UNTIL(slot_start_with_guard);
           GMW_RCV_PACKET();
 

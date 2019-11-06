@@ -81,7 +81,7 @@
 
 /* magic ID to identify a Glossy packet (the 3 most significant bits only!) */
 #ifndef GLOSSY_CONF_HEADER_BYTE
-#define GLOSSY_CONF_HEADER_BYTE                 0x40
+#define GLOSSY_CONF_HEADER_BYTE                 0xe0
 #endif /* GLOSSY_CONF_HEADER_BYTE */
 
 /* max. allowed payload length */
@@ -92,7 +92,7 @@
 /* max. header length (with sync) */
 #define GLOSSY_MAX_HEADER_LEN                   2
 
-/* Try to keep the setup time in glossy_start() constant to allow for precide
+/* Try to keep the setup time in glossy_start() constant to allow for precise
  * drift compensation on the source nodes. The flood initiator will wait until
  * the specified amount has passed before issuing the start_tx command. 
  * Note: This define only has an effect on the initiator if sync is enabled.
@@ -265,6 +265,27 @@ void glossy_reset_stats(void);
  */
 int8_t glossy_get_noise_floor(void);
 
+
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+
+int8_t glossy_get_sync_mode(void);
+uint16_t glossy_get_header(void);
+uint32_t glossy_get_T_slot_estimated(void);
+uint64_t glossy_get_T_slot_sum(void);
+int8_t glossy_get_n_T_slot(void);
+
+
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 
 #if !STROBING_CONF_USE_RF1A_CALLBACKS
 /**
