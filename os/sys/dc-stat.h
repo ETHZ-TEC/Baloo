@@ -61,7 +61,7 @@
 
 /* HW timer value (16 bits) */
 #ifndef DCSTAT_RTIMER_NOW_HW
-#define DCSTAT_RTIMER_NOW_HW()  rtimer_ext_now_lf_hw()
+#define DCSTAT_RTIMER_NOW_HW()  rtimer_ext_now_lf_hw() /* 32kHz */
 #endif /* DCSTAT_RTIMER_NOW_HW */
 
 /* define default (dummy) hooks / actions */
@@ -167,6 +167,10 @@
 
 #define DCSTAT_RFRX_DC  (uint16_t)(dc_stat_sum_rf_rx / ((DCSTAT_RTIMER_NOW() - dc_stat_resettime) / 10000))
 
+#define DCSTAT_RF_SUM   (uint32_t)(dc_stat_sum_rf)
+#define DCSTAT_RFTX_SUM (uint32_t)(dc_stat_sum_rf_tx)
+#define DCSTAT_RFRX_SUM (uint32_t)(dc_stat_sum_rf_rx)
+
 #define DCSTAT_RESET    { \
     dc_stat_sum_cpu   = 0; \
     dc_stat_sum_rf    = 0; \
@@ -197,14 +201,17 @@ extern uint16_t dc_stat_isr;
 #define DCSTAT_RF_ON
 #define DCSTAT_RF_OFF
 #define DCSTAT_RF_DC    0
+#define DCSTAT_RF_SUM   0
 
 #define DCSTAT_RFTX_ON
 #define DCSTAT_RFTX_OFF
 #define DCSTAT_RFTX_DC  0
+#define DCSTAT_RFTX_SUM 0
 
 #define DCSTAT_RFRX_ON
 #define DCSTAT_RFRX_OFF
 #define DCSTAT_RFRX_DC  0
+#define DCSTAT_RFRX_SUM 0
 
 #define DCSTAT_RESET
 

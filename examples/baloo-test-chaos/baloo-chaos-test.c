@@ -59,6 +59,7 @@ static gmw_protocol_impl_t  src_impl;
 static gmw_control_t        control;
 /*---------------------------------------------------------------------------*/
 static uint16_t       counter;
+static uint8_t        received_payload[NUM_NODES];
 static const uint16_t static_nodes[NUM_NODES] = NODE_LIST;
 /*---------------------------------------------------------------------------*/
 static void app_control_init(gmw_control_t* control);
@@ -113,8 +114,16 @@ PROCESS_THREAD(app_process, ev, data)
     PROCESS_YIELD_UNTIL(ev == PROCESS_EVENT_POLL);
     APP_TASK_ACTIVE;      /* application task runs now */
 
+    DEBUG_PRINT_INFO("payload: %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u",
+                     received_payload[0], received_payload[1], received_payload[2], received_payload[3],
+                     received_payload[4], received_payload[5], received_payload[6], received_payload[7],
+                     received_payload[8], received_payload[9], received_payload[10], received_payload[11],
+                     received_payload[12], received_payload[13], received_payload[14], received_payload[15]
+    );
     DEBUG_PRINT_INFO("round finished");
-    counter += node_id;
+
+    //counter += node_id;
+    counter += 0;
 
     /* poll the debug-print task to print out all queued debug messages */
     debug_print_poll();
@@ -141,7 +150,8 @@ host_on_slot_pre_callback(uint8_t slot_index,
                           uint8_t is_contention_slot)
 {
   /* regardless of whether we are initiator: fill in the payload */
-  *out_payload = (counter/7)%2;
+  //*out_payload = (counter/7)%2;
+  *out_payload = (uint8_t)(node_id + counter);
   *out_len = 1;
   return GMW_EVT_SKIP_DEFAULT;
 }
@@ -155,14 +165,16 @@ host_on_slot_post_callback(uint8_t slot_index,
                            uint8_t is_contention_slot,
                            gmw_pkt_event_t event)
 {
-  DEBUG_PRINT_INFO("payload: %u",
-                   payload[0]);
+  //Store the received payload
+  memcpy(&received_payload, payload, NUM_NODES);
+  //DEBUG_PRINT_INFO("payload: %u", payload[0]);
   return GMW_EVT_REPEAT_DEFAULT;
 }
 /*---------------------------------------------------------------------------*/
 static void
 host_on_round_finished(gmw_pre_post_processes_t* in_out_pre_post_processes)
 {
+  //DEBUG_PRINT_INFO("%u %u %u", received_payload[0],received_payload[1],received_payload[2]);
   app_control_update(&control);
   gmw_set_new_control(&control);
   leds_off(LEDS_GREEN);
@@ -187,7 +199,8 @@ src_on_slot_pre_callback(uint8_t slot_index,
                          uint8_t is_contention_slot)
 {
   /* regardless of whether we are initiator: fill in the payload */
-  *out_payload = (counter/7)%2;
+  //*out_payload = (counter/7)%2;
+  *out_payload = (uint8_t)(node_id + counter);
   *out_len = 1;
   return GMW_EVT_SKIP_DEFAULT;
 }
@@ -201,14 +214,16 @@ src_on_slot_post_callback(uint8_t slot_index,
                           uint8_t is_contention_slot,
                           gmw_pkt_event_t event)
 {
-  DEBUG_PRINT_INFO("payload: %u",
-                   payload[0]);
+  //Store the received payload
+  memcpy(&received_payload, payload, NUM_NODES);
+  //DEBUG_PRINT_INFO("payload: %u", payload[0]);
   return GMW_EVT_REPEAT_DEFAULT;
 }
 /*---------------------------------------------------------------------------*/
 static void
 src_on_round_finished(gmw_pre_post_processes_t* in_out_pre_post_processes)
 {
+  //DEBUG_PRINT_INFO("%u %u %u", received_payload[1],received_payload[5],received_payload[12]);
   leds_off(LEDS_GREEN);
 }
 /*---------------------------------------------------------------------------*/

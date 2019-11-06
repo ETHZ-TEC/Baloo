@@ -361,5 +361,7 @@ typedef uint8_t uip_stats_t;
 
 #include "rtimer-ext.h"
 
+#include "spi.h"
+
 #endif /* __PLATFORM_H__ */
 

@@ -53,7 +53,11 @@
 #ifndef STROBING_CONF_USE_TIMER_ISR
 /* if set to 0, a callback function (strobing_timer_int_cb) will be defined
  * instead of the timer interrupt service routine */
+#if BALOO
+#define STROBING_CONF_USE_TIMER_ISR     !GMW_CONF_USE_MULTI_PRIMITIVES
+#else
 #define STROBING_CONF_USE_TIMER_ISR     1
+#endif /* BALOO */
 #endif /* STROBING_CONF_USE_TIMER_ISR */
 
 #ifndef STROBING_CONF_TX_TO_TX_DELAY

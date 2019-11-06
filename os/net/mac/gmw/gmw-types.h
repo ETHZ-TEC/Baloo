@@ -154,6 +154,7 @@ typedef struct {
                              * but nothing on the channel */
   uint16_t t_proc_max;      /* max. time needed to process rcvd data pkts */
   uint32_t t_round_max;     /* longest round duration in ms */
+  uint32_t t_round_last;    /* latest round duration in LF ticks */
   uint32_t t_slack_min;     /* shortest slack time (end of current round to
                              * start of next round) in ms */
   /* crc must be the last element! */
@@ -190,6 +191,7 @@ typedef enum {
 /**
  * @brief                       GMW data packet reception events
  */
+//TODO: why do we have different events for control and data packets?
 typedef enum {
   GMW_EVT_PKT_OK = 0,          /* Successful Glossy flood (send or receive) */
   GMW_EVT_PKT_CORRUPTED = 1,   /* A Glossy flood detected but corrupted */
@@ -222,7 +224,7 @@ typedef enum {
 typedef enum {
   GMW_EVT_NO_REPEAT = 0,       /* No repetition */
   GMW_EVT_REPEAT_SLOT = 1,     /* Repeat the last data slot */
-  GMW_EVT_REPEAT_ROUND = 2,    /* Smart over the complete round */
+  GMW_EVT_REPEAT_ROUND = 2,    /* Start over the complete round */
   GMW_EVT_REPEAT_DEFAULT = 0   /* Set default same as 'NO_REPEAT' */
 } gmw_repeat_event_t;
 /*---------------------------------------------------------------------------*/
@@ -321,6 +323,7 @@ typedef gmw_repeat_event_t (*gmw_on_slot_post_callback)(
  */
 typedef void (*gmw_on_round_finish_callback)(
      gmw_pre_post_processes_t* in_out_pre_post_processes);
+
 /**
  * @brief                       Called each time a source node timed out while
  *                              trying to receive a control packet.

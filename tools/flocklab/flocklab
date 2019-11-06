@@ -1,39 +1,70 @@
 #!/bin/bash
 #
-# $Id: flocklab 2489 2013-11-06 12:46:39Z walserc $
+# ------------------------------
+# Command line tool for FlockLab
+# v1.2
 #
-# command line tool for Flocklab
-# usage:
+# Usage:
 #
-# -v <testconfig.xml>: validate 
+# -v <testconfig.xml>: validate
 # -c <testconfig.xml>: create
 # -a <testid>:         abort
 # -d <testid>:         delete
+# -g <testid>:         get via https
+# -f <testid>:         fetch via webdav
+# -h:                  display help
+#
+# Your FlockLab login credentials need to be stored in .flocklabauth in your home directory as follows:
+#   USER=[your_username]
+#   PASSWORD=[your_password]
+#
+# If you want to be able to download your test results via webdav (-f), you need to install the client 'cadaver'.
+# ------------------------------
 
+DEST=/tmp         # destination directory
+EXTRACT=1         # extract results?
+TESTCONFIG=0      # also download XML test config?
 SERVER_URL=https://www.flocklab.ethz.ch/user
-CURL_PARAMS=-s
-if [ -f .flocklabauth ]
+CURL_PARAMS='-sS -4'
+FLAUTH_FILE=.flocklabauth
+NETRC_FILE=$HOME/.netrc
+DAV_URL=https://www.flocklab.ethz.ch/user/webdav
+DAV_CLIENT=cadaver
+
+if [ -f $FLAUTH_FILE ]
 then
-  source ./.flocklabauth
-else
-  if [ -f $HOME/.flocklabauth ]
-  then
-    source $HOME/.flocklabauth
-  fi
+  source ./$FLAUTH_FILE
+elif [ -f $HOME/$FLAUTH_FILE ]
+then
+  source $HOME/$FLAUTH_FILE
+elif [ -f $NETRC_FILE ]
+then
+  #echo "using credentials from .netrc file"
+  while read -r LINE; do
+    if [[ "${LINE,,}" == *"login"* ]]
+    then
+      USER=$(echo $LINE | awk '{print $2}')
+    elif [[ "${LINE,,}" == *"password"* ]]
+    then
+      PASSWORD=$(echo $LINE | awk '{print $2}')
+    fi
+  done < "$NETRC_FILE"
 fi
 
 usage()
 {
 cat << EOF
-command line tool for flocklab
+command line tool for FlockLab (https://flocklab.ethz.ch)
 
-usage: $0 options
+usage: $0 [OPTION]
 
 OPTIONS:
-   -v <testconfig.xml>: validate 
-   -c <testconfig.xml>: create
-   -a <testid>:         abort
-   -d <testid>:         delete
+   -v <testconfig.xml>: validate test config
+   -c <testconfig.xml>: create / schedule new test
+   -a <testid>:         abort test
+   -d <testid>:         delete test
+   -g <testid>:         get test results (via https)
+   -f <testid>:         fetch test results (via webdav)
 EOF
 }
 
@@ -41,12 +72,69 @@ password()
 {
 cat << EOF
 Wrong username / password
-please check your settings in .flocklabauth
+please check your settings in $FLAUTH_FILE
 EOF
 }
 
+fetchtest()
+{
+  # if .netrc file does not exist, create it
+  if [ ! -f $NETRC_FILE ]
+  then
+    echo "default
+login $USER
+password $PASSWORD" > $NETRC_FILE
+    chmod 600 $NETRC_FILE
+    echo ".netrc file created"
+  fi
 
-while getopts “v:c:a:d:” OPTION
+  TESTID=$OPTARG
+  if [ ! -d $DEST ]
+  then
+    mkdir $DEST
+  fi
+  if [ -d $DEST/$TESTID ]
+  then
+    echo "Error: directory $DEST/$TESTID already exists"
+    exit 1
+  fi
+  mkdir $DEST/$TESTID
+  $DAV_CLIENT > $DEST/$TESTID/dav.log 2>&1 <<EOF
+open $DAV_URL
+get $TESTID/testconfiguration.xml $DEST/$TESTID/testconfiguration.xml
+get $TESTID/results.tar.gz $DEST/$TESTID/$TESTID.tar.gz
+exit
+EOF
+  if [ `sed '/^\(404\|500\)/!d' $DEST/$TESTID/dav.log | wc -l` -gt 0 ]
+  then
+    echo "Error occured while fetching data:"
+    cat $DEST/$TESTID/dav.log
+    rm -rf $DEST/$TESTID
+  else
+    echo "Downloaded data to $DEST/$TESTID"
+    if [ $EXTRACT -gt 0 ]
+    then
+      tar -xvzf $DEST/$TESTID/$TESTID.tar.gz -C $DEST
+      if [ $? -eq 0 ]
+      then
+        rm $DEST/$TESTID/$TESTID.tar.gz
+      fi
+    fi
+    if [ $TESTCONFIG -eq 0 ]
+    then
+      rm $DEST/$TESTID/testconfiguration.xml
+    fi
+    rm $DEST/$TESTID/dav.log
+  fi
+}
+
+if [ "$#" -lt 1 ]
+then
+  usage
+  exit 1
+fi
+
+while getopts “v:c:a:d:f:g:h” OPTION
 do
   case $OPTION in
     v)
@@ -56,17 +144,19 @@ do
         if [ `echo $RESPONSE | wc -m` -lt 2 ]
         then
           password
-          exit
+          exit 1
         fi
         SUCCESS=`echo $RESPONSE | sed '/<p>The file validated correctly.<\/p>/!d' | wc -l`
         if [ $SUCCESS -eq 0 ]
         then
           echo $RESPONSE | sed 's/.*<!-- cmd -->\(.*\)<!-- cmd -->.*/\1/;s/<li>/\n/g;s/<[^>]*>//g'
+          exit 1
         else
           echo 'The file validated correctly.'
         fi
       else
         echo 'There were connection problems contacting the FlockLab server '$SERVER_URL
+        exit 1
       fi
       ;;
     c)
@@ -76,17 +166,19 @@ do
         if [ `echo $RESPONSE | wc -m` -lt 2 ]
         then
           password
-          exit
+          exit 1
         fi
         SUCCESS=`echo $RESPONSE | sed '/<!-- cmd --><p>Test (Id [0-9]*) successfully added.<\/p>/!d' | wc -l`
         if [ $SUCCESS -eq 0 ]
         then
           echo $RESPONSE | sed 's/.*<!-- cmd -->\(.*\)<!-- cmd -->.*/\1/;s/<li>/\n/g;s/<[^>]*>//g'
+          exit 1
         else
           echo $RESPONSE | sed 's/.*<!-- flocklabscript\,\([0-9]*\),\([0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}T[0-9]\{2\}:[0-9]\{2\}:[0-9]\{2\}+[0-9]\{4\}\),\([0-9]*\)-->.*/Test successfully added. Test ID: \1, Starttime: \2 (\3)/'
         fi
       else
         echo 'There were connection problems contacting the FlockLab server '$SERVER_URL
+        exit 1
       fi
       ;;
     a)
@@ -96,42 +188,96 @@ do
         if [ `echo $RESPONSE | wc -m` -lt 2 ]
         then
           password
-          exit
+          exit 1
         fi
         SUCCESS=`echo $RESPONSE | sed '/<!-- cmd --><p>The test has been aborted.<\/p><!-- cmd -->/!d' | wc -l`
         if [ $SUCCESS -eq 0 ]
         then
           echo $RESPONSE | sed 's/.*<!-- cmd -->\(.*\)<!-- cmd -->.*/\1/;s/<li>/\n/g;s/<[^>]*>//g'
+          exit 1
         else
           echo $RESPONSE | sed 's/.*<!-- cmd --><p>\(The test has been aborted\.\)<\/p><!-- cmd -->.*/\1/'
         fi
       else
         echo 'There were connection problems contacting the FlockLab server '$SERVER_URL
+        exit 1
       fi
       ;;
-     d)
+    d)
       RESPONSE=`curl $CURL_PARAMS -o - -F username="$USER" -F password="$PASSWORD" -F removeit="Remove test" -F testid=$OPTARG $SERVER_URL/test_delete.php`
       if [ $? -eq 0 ]
       then
         if [ `echo $RESPONSE | wc -m` -lt 2 ]
         then
           password
-          exit
+          exit 1
         fi
         SUCCESS=`echo $RESPONSE | sed '/<!-- cmd --><p>The test has been removed.<\/p><!-- cmd -->/!d' | wc -l`
         if [ $SUCCESS -eq 0 ]
         then
           echo $RESPONSE | sed 's/.*<!-- cmd -->\(.*\)<!-- cmd -->.*/\1/;s/<li>/\n/g;s/<[^>]*>//g'
+          exit 1
         else
           echo $RESPONSE | sed 's/.*<!-- cmd --><p>\(The test has been removed\.\)<\/p><!-- cmd -->.*/\1/'
         fi
       else
         echo 'There were connection problems contacting the FlockLab server '$SERVER_URL
+        exit 1
       fi
+      ;;
+    g)
+      echo "Fetching results for test $OPTARG ..."
+      OUTFILE=$DEST/$OPTARG.tar.gz
+      RESPONSE=`curl $CURL_PARAMS -X POST -H "Content-Type: application/x-www-form-urlencoded" -d "testid=${OPTARG}&query=get&username=${USER}&password=${PASSWORD}" -o $OUTFILE $SERVER_URL/result_download_archive.php`
+      FILESIZE=`stat -c "%s" $OUTFILE`
+      if [ $FILESIZE -lt 1000 ]
+      then
+        OUTFILECONT=`cat $OUTFILE`
+        if [[ "$OUTFILECONT" == *"error"* ]]
+        then
+          ERRORMSG=`echo ${OUTFILECONT:1:-1} | awk -F':' '{print $3}'`
+          echo "Failed: "$ERRORMSG
+          rm $OUTFILE
+          exit 1
+        fi
+      fi
+      echo "Results saved as "$OUTFILE
+      if [ $EXTRACT -gt 0 ]
+      then
+        tar -xvzf $OUTFILE -C $DEST
+        if [ $? -eq 0 ]
+        then
+          rm $OUTFILE
+        fi
+      fi
+      if [ $TESTCONFIG -gt 0 ]
+      then
+        if [ $EXTRACT -gt 0 ]
+        then
+          OUTFILE=$DEST/$OPTARG/testconfiguration.xml
+        else
+          OUTFILE=$DEST/${OPTARG}_config.xml
+        fi
+        RESPONSE=`curl $CURL_PARAMS -X POST -H "Content-Type: application/x-www-form-urlencoded" -d "testid=${OPTARG}&query=get&username=${USER}&password=${PASSWORD}" -o $OUTFILE $SERVER_URL/testconfig_download.php`
+      fi
+      ;;
+    f)
+      which $DAV_CLIENT >> /dev/null
+      if [[ $? != 0 ]]
+      then
+        echo 'WebDAV client '$DAV_CLIENT' not found!'
+        exit 1
+      fi
+      echo "Fetching results for test $OPTARG ..."
+      fetchtest
+      ;;
+    h)
+      usage
+      exit 0
       ;;
     ?)
       usage
-      exit
+      exit 0
       ;;
   esac
 done

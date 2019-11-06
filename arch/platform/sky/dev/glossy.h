@@ -63,7 +63,11 @@
 #ifndef GLOSSY_CONF_USE_TIMER_ISR
 /* if set to 0, a callback function (glossy_timer_int_cb) will be defined
  * instead of the timer interrupt service routine */
+#if BALOO
+#define GLOSSY_CONF_USE_TIMER_ISR       !GMW_CONF_USE_MULTI_PRIMITIVES
+#else
 #define GLOSSY_CONF_USE_TIMER_ISR       1
+#endif /* BALOO */
 #endif /* CHAOS_CONF_USE_TIMER_ISR */
 
 /* do not change */

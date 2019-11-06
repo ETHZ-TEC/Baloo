@@ -41,10 +41,11 @@
 #define HOST_ID                         1
 
 #define NODE_LIST  \
- { 1,2,3,4,6,7,8,10,11,13,14,15,16,17,18,19,20,22,23,24,25,26,27,28,32,33 }
+ { 1,2,3,4,6,8,10,7,11,13,14,15,16,17,18,19,20,22,23,24,25,26,27,28,32,33 }
 #define NUM_NODES                       26
 
-/* to compile for flocklab, pass FLOCKLAB=1 to the make command */#ifdef FLOCKLAB
+/* to compile for flocklab, pass FLOCKLAB=1 to the make command */
+#ifdef FLOCKLAB
   #include "../../tools/flocklab/flocklab.h"
   #define GLOSSY_START_PIN                FLOCKLAB_LED1
   #define GLOSSY_TX_PIN                   FLOCKLAB_INT1
@@ -72,10 +73,7 @@
     #define STROBING_RX_PIN               ADC2
   #endif /* FLOCKLAB */
   /* communication primitives */
-  #define GLOSSY_CONF_USE_TIMER_ISR       !GMW_CONF_USE_MULTI_PRIMITIVES
-  #define CHAOS_CONF_USE_TIMER_ISR        !GMW_CONF_USE_MULTI_PRIMITIVES
-  #define STROBING_CONF_USE_TIMER_ISR     0
-  #define GMW_PRIM1_ENABLE                0               /* don't use chaos */
+  #define GMW_PRIM1_ENABLE                0  /* don't use chaos */
 
 #elif defined PLATFORM_DPP_CC430
   /* RF channel */
@@ -92,10 +90,6 @@
   #else
     #define GMW_CONF_RF_TX_POWER          GMW_RF_TX_POWER_PLUS_10_dBm
   #endif /* FLOCKLAB */
-
-  /* communication primitives */
-  #define GLOSSY_CONF_USE_RF1A_CALLBACKS    !GMW_CONF_USE_MULTI_PRIMITIVES
-  #define STROBING_CONF_USE_RF1A_CALLBACKS  !GMW_CONF_USE_MULTI_PRIMITIVES
 
 #else
   #error "unknown target platform"

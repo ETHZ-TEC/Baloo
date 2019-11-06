@@ -61,6 +61,7 @@
  *            schedule and configuration information are not send when the
  *            static feature is used.
  */
+// TODO: optimize (same style as the tests in gmw-control.c)
 #ifndef GMW_CONF_MAX_CONTROL_PKT_LEN
   #if (GMW_CONF_USE_STATIC_SCHED && GMW_CONF_USE_STATIC_CONFIG)
     #define GMW_CONF_MAX_CONTROL_PKT_LEN      (GMW_CONF_CONTROL_USER_BYTES + GMW_CONF_USE_MAGIC_NUMBER)
@@ -91,6 +92,7 @@
  *
  * @note      Used to allocate memory for the control structure.
  */
+//TODO: Is there a check whether I set n_slots > GMW_CONF_MAX_SLOTS? Would be nice to add...
 #ifndef GMW_CONF_MAX_SLOTS
 #define GMW_CONF_MAX_SLOTS                10
 #endif /* GMW_CONF_MAX_SLOTS */
@@ -283,6 +285,7 @@
  *            interrupt a round that would otherwise overruns into the next
  *            round.
  */
+//TODO: document this better, not sure about where the 'warning' actually is...
 #ifndef GMW_CONF_T_POSTPROCESS_MIN
 #define GMW_CONF_T_POSTPROCESS_MIN        0 /* in ms */
 #endif /* GMW_CONF_T_POSTPROCESS_MIN */
@@ -365,6 +368,11 @@
 #ifndef GMW_CONF_MAX_HOPS
 #define GMW_CONF_MAX_HOPS                 5
 #endif /* GMW_CONF_MAX_HOPS */
+
+/**
+ * @brief     Value corresponding to undefined relay counter.
+ */
+#define GMW_RELAY_COUNT_UNDEF             255
 /*---------------------------------------------------------------------------*/
 
 /*---------------------------------------------------------------------------*/
@@ -461,6 +469,7 @@
  * @note      Implemented drift compensation is quite basic, but already
  *            works quite well.
  */
+//TODO: document the clock-drift compensation and add info about reasonable max time between rounds (not to get off sync)
 #ifndef GMW_CONF_USE_DRIFT_COMPENSATION
 #define GMW_CONF_USE_DRIFT_COMPENSATION   1
 #endif /* GMW_CONF_USE_DRIFT_COMPENSATION */
@@ -523,9 +532,6 @@
  *            there is 'high noise' on the wireless channel.
  *
  *            Default value is set to 10.
- *
- * @note      A reasonable threshold is 3dB above the expected sensitivity
- *            of the radio. To reduce false positives, set to a higher value.
  */
 #ifndef GMW_CONF_HIGH_NOISE_MIN_COUNT
   #define GMW_CONF_HIGH_NOISE_MIN_COUNT   10
@@ -562,7 +568,7 @@
 
 /* the time base for the gap time field in the config is 100 us */
 #ifndef GMW_CONF_GAP_TIME_BASE
-#define GMW_CONF_GAP_TIME_BASE            100UL /* in ms */
+#define GMW_CONF_GAP_TIME_BASE            100UL /* in us */
 #else
 #error "GMW_CONF_GAP_TIME_BASE already defined!"
 #endif

@@ -51,6 +51,3 @@ reset: $(CONTIKI_PROJECT).reset
 
 %.reset:
 	@python ../../tools/dpp/reset_cc430.py $(PORT)
-
-stackcheck:
-	@msp430-size $(CONTIKI_PROJECT).$(TARGET) | tail -1 | awk '{if ($$2 + $$3 > (4096 - $(STACKSIZE))) { print "WARNING: only " 4096 - ($$2 + $$3) " bytes remaining for the stack!" } else { print "OK" } }'

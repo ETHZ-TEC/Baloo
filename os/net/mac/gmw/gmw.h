@@ -55,6 +55,11 @@
 #ifndef __GMW_H__
 #define __GMW_H__
 
+
+#if CUSTOM
+#include "custom_config.h"
+#endif
+
 /* the correct include order is important */
 #include "gmw-platform-conf.h"
 #include "gmw-platform.h"
@@ -70,9 +75,6 @@
 #define HOST_ID    0
 #endif
 
-#if DEPCOMP
-#include "config.h"
-#endif
 /*---------------------------------------------------------------------------*/
 
 /* important values, do not modify */
@@ -123,7 +125,7 @@
 
 #define GMW_TICKS_TO_MS(t)              ((t) * 1000UL / GMW_RTIMER_SECOND)
 
-#define GMW_TICKS_TO_US(t)              ((t) * 1000000UL / GMW_RTIMER_SECOND)
+#define GMW_TICKS_TO_US(t)              ((t) * 1000000ULL / GMW_RTIMER_SECOND)
 
 /* converts from time and period into ms */
 #define GMW_PERIOD_TO_MS(t)             ((t) * 1000UL / GMW_CONF_TIME_SCALE)
@@ -211,7 +213,7 @@ gmw_get_state(void);
 /**
  * @brief                       get the GMW statistics
  */
-const gmw_statistics_t *
+gmw_statistics_t *
 const gmw_get_stats(void);
 
 /**

@@ -91,10 +91,16 @@
 
 #define IS_INITIATOR()    (g.initiator_id == node_id)
 #define WITH_SYNC()       (GET_SYNC(g.header.pkt_type))
+
+#if GLOSSY_CONF_ALWAYS_RELAY_CNT
+#define WITH_RELAY_CNT()  (1)               /* relay counter always */
+#else
 #define WITH_RELAY_CNT()  (WITH_SYNC())     /* relay counter if sync enabled */
+#endif /* GLOSSY_CONF_ALWAYS_RELAY_CNT */
 
 #define GLOSSY_HEADER_LEN(pkt_type) \
-                          ((GET_SYNC(pkt_type) == 0) ? 1 : 2)
+                          (( (GET_SYNC(pkt_type) == 1) || (WITH_RELAY_CNT()) ) \
+                              ? 2 : 1 )
 
 /* mainly for debugging purposes */
 #ifdef GLOSSY_START_PIN
@@ -370,9 +376,9 @@ glossy_start(uint16_t initiator_id,
 #if GLOSSY_CONF_SETUPTIME_WITH_SYNC
     // busy wait for the setup time to pass
     if(with_sync) {
-      GLOSSY_STOPPED;
+      //GLOSSY_STOPPED;
       while((uint16_t)(rtimer_ext_now_lf_hw() - setup_time_start) < GLOSSY_SYNC_SETUP_TICKS);
-      GLOSSY_STARTED;
+      //GLOSSY_STARTED;
     }
 #endif /* GLOSSY_CONF_SETUPTIME_WITH_SYNC */
     /* start the first transmission */

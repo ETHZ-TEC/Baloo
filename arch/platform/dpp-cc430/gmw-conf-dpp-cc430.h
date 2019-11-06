@@ -113,10 +113,11 @@
 
   #if GMW_PRIM2_ENABLE
   #define GMW_START_PRIM2(initiator_id, payload, payload_len, n_tx_max, sync, rf_cal)  strobing_start((initiator_id == node_id), payload, payload_len, n_tx_max)
-  #define GMW_STOP_PRIM2()             strobing_stop()
-  #define GMW_GET_PAYLOAD_LEN_PRIM2()  strobing_get_payload_len()
-  #define GMW_GET_N_RX_PRIM2()         strobing_get_rx_cnt()
-  #define GMW_GET_N_RX_STARTED_PRIM2() strobing_get_rx_try_cnt()
+  #define GMW_STOP_PRIM2()                    strobing_stop()
+  #define GMW_GET_PAYLOAD_LEN_PRIM2()         strobing_get_payload_len()
+  #define GMW_GET_N_RX_PRIM2()                strobing_get_rx_cnt()
+  #define GMW_GET_N_RX_STARTED_PRIM2()        strobing_get_rx_try_cnt()
+  #define GMW_GET_RELAY_CNT_FIRST_RX_PRIM2()  GMW_RELAY_COUNT_UNDEF
   #endif /* GMW_PRIM2_ENABLE */
 
   /* make sure the RF1A callback functions are not defined multiple times (put this into project-conf.h!) */

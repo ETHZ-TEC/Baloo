@@ -3,9 +3,9 @@
 |TelosB 
   | make TARGET=sky |
 |DPP-cc430 
-  | _Non available for this platform_ |
+  | _Not available for this platform_ |
 
-This simple Baloo protocol illustrates the utilization of Choas as communication primitive. 
+This simple Baloo protocol illustrates the utilization of Chaos as communication primitive. 
 
 In each round, nodes pseudo-randomly generate a boolean value,
 which is passed as payload to Chaos.

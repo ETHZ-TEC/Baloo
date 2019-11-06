@@ -14,19 +14,17 @@ Unless explicitly stated otherwise, all Baloo sources are distributed under the 
 
 ## Online presence
 * GitHub repository   [github.com/ETHZ-TEC/Baloo](https://github.com/ETHZ-TEC/Baloo)
+* Documentation [github.com/ETHZ-TEC/Baloo/wiki](https://github.com/ETHZ-TEC/Baloo/wiki)
 * Project webpage [www.romainjacob.net/baloo/](http://www.romainjacob.net/research/baloo/)
 
 ## Disclaimer 
-Although we tested the code extensively, Baloo is a research prototype that likely contain bugs. We take no responsibility for and give no warranties in respect of using the code.
+> Although we tested the code extensively, Baloo is a research prototype that likely contain bugs. We take no responsibility for and give no warranties in respect of using the code.
 
-## Documentation
+This repository contains an implementation of Baloo using the [Contiki-NG](http://contiki-ng.org/) operating system. Some minor modifications to the original OS code where made. The list of modified files (and rational for changes, whenever appropriate) is available [here](Contiki-change-files-log).
 
-The [project Wiki](https://github.com/ETHZ-TEC/Baloo/wiki) documents the Baloo mechanics and features, how they are implemented and how to use them in your designs. 
-In addition, the Baloo source files contain detailed Doxygen comments. The Doxygen documentation can be generated using the following commands
+The Baloo source files contain detailed Doxygen comments. The Doxygen documentation can be generated with the following commands
 ```
 cd /tools/doxygen/
 make html
 ```
-This generates the complete documentation for Contiki-NG. Documentation of Baloo files can be directly accessed  `/tools/doxygen/html/group__gmw.html`
-
-This repository contains an implementation of Baloo using the [Contiki-NG](http://contiki-ng.org/) operating system. Some minor modifications to the original OS code where made. The list of modified files (and rational for changes, whenever appropriate) is available [here](Contiki-change-files-log).
+This generates the complete documentation for Contiki-NG. Documentation of Baloo files can be directly accessed  `/tools/doxygen/html/group__gmw.html`.

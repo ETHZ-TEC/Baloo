@@ -73,6 +73,12 @@
 #define GLOSSY_CONF_ALWAYS_SAMPLE_NOISE         0
 #endif /* GLOSSY_CONF_ALWAYS_SAMPLE_NOISE */
 
+#ifndef GLOSSY_CONF_ALWAYS_RELAY_CNT
+/* set to 1 to always send the relay counter in the glossy header;
+ * if set to 0, glossy sends the relay counter only in a sync flood */
+#define GLOSSY_CONF_ALWAYS_RELAY_CNT            0
+#endif /* GLOSSY_CONF_ALWAYS_RELAY_CNT */
+
 /* magic ID to identify a Glossy packet (the 3 most significant bits only!) */
 #ifndef GLOSSY_CONF_HEADER_BYTE
 #define GLOSSY_CONF_HEADER_BYTE                 0x40
@@ -98,7 +104,11 @@
 /* define the rf1a_cb_... functions within glossy.c? if disabled, callback
  * functions will be named glossy_...() instead */
 #ifndef GLOSSY_CONF_USE_RF1A_CALLBACKS
+#if BALOO
+#define GLOSSY_CONF_USE_RF1A_CALLBACKS          !GMW_CONF_USE_MULTI_PRIMITIVES
+#else
 #define GLOSSY_CONF_USE_RF1A_CALLBACKS          1
+#endif /* BALOO */
 #endif /* GLOSSY_CONF_USE_RF1A_CALLBACKS */
 
 #define GLOSSY_UNKNOWN_INITIATOR                0

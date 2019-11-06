@@ -46,7 +46,11 @@
 /* define the rf1a_cb_... functions within strobing.c? if disabled, callback
  * functions will be named strobing_...() instead */
 #ifndef STROBING_CONF_USE_RF1A_CALLBACKS
+#if BALOO
+#define STROBING_CONF_USE_RF1A_CALLBACKS      !GMW_CONF_USE_MULTI_PRIMITIVES
+#else
 #define STROBING_CONF_USE_RF1A_CALLBACKS      1
+#endif /* BALOO */
 #endif /* STROBING_CONF_USE_RF1A_CALLBACKS */
 
 #ifndef STROBING_CONF_TX_TO_TX_DELAY

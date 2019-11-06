@@ -92,6 +92,7 @@ uint8_t gmw_high_noise_detected();
  * @note                        Currently does not support multiple primitives
  *                              (i.e., valid for Glossy only).
  */
+//TODO: extend to multiple primitives
 uint8_t gmw_communication_active();
 
 /**

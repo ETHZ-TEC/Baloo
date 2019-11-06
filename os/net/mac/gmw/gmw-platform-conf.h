@@ -48,6 +48,8 @@
  *          platform-specific implementations of Glossy and rtimer.
  */
 
+//TODO: Does it actually make sense to have such default defines here?
+
 #ifndef GMW_PLATFORM_CONF_H_
 #define GMW_PLATFORM_CONF_H_
 
@@ -68,7 +70,9 @@
 #endif /* GMW_START */
 
 #ifndef GMW_STOP
-#define GMW_STOP()                      glossy_stop()
+#define GMW_STOP()                      glossy_stop();  \
+                                        stats.relay_cnt \
+                                        = GMW_GET_RELAY_CNT_FIRST_RX();
 #endif /* GMW_STOP */
 
 #ifndef GMW_GET_T_REF

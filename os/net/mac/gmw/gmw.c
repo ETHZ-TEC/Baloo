@@ -59,8 +59,8 @@
 #include "debug-print.h"
 #include "gpio.h"
 
-#if DEPCOMP
-#include "config.h"
+#if CUSTOM
+#include "custom_config.h"
 #endif
 
 /*---------------------------------------------------------------------------*/
@@ -86,12 +86,20 @@
 #endif /* GMW_CONF_SLOT_ACT_PIN */
 
 #ifdef GMW_CONF_TASK_ACT_PIN
- #define GMW_TASK_RESUMED        PIN_SET(GMW_CONF_TASK_ACT_PIN)
- #define GMW_TASK_SUSPENDED      PIN_CLR(GMW_CONF_TASK_ACT_PIN)
+ #define GMW_GPIO_TASK_RESUMED          PIN_SET(GMW_CONF_TASK_ACT_PIN)
+ #define GMW_GPIO_TASK_SUSPENDED        PIN_CLR(GMW_CONF_TASK_ACT_PIN)
 #else /* GMW_CONF_TASK_ACT_PIN */
- #define GMW_TASK_RESUMED
- #define GMW_TASK_SUSPENDED
+ #define GMW_GPIO_TASK_RESUMED
+ #define GMW_GPIO_TASK_SUSPENDED
 #endif /* GMW_CONF_TASK_ACT_PIN */
+
+#ifdef GMW_CONF_ROUND_ACT_PIN
+ #define GMW_GPIO_ROUND_START           PIN_SET(GMW_CONF_ROUND_ACT_PIN)
+ #define GMW_GPIO_ROUND_END             PIN_CLR(GMW_CONF_ROUND_ACT_PIN)
+#else /* GMW_CONF_ROUND_ACT_PIN */
+ #define GMW_GPIO_ROUND_START
+ #define GMW_GPIO_ROUND_END
+#endif /* GMW_CONF_ROUND_ACT_PIN */
 /*---------------------------------------------------------------------------*/
 /**
  * @brief     the finite state machine for the time synchronization on a source
@@ -233,9 +241,7 @@ gmw_sync_state_t next_state[NUM_OF_SYNC_EVENTS][NUM_OF_SYNC_STATES] =
 #define GMW_WAIT_UNTIL(time) \
 {\
   GMW_RTIMER_SCHEDULE(time, gmw_thread);\
-  GMW_TASK_SUSPENDED;\
   PT_YIELD(&gmw_pt);\
-  GMW_TASK_RESUMED;\
 }
 #ifndef GMW_BEFORE_DEEPSLEEP
 #define GMW_BEFORE_DEEPSLEEP()
@@ -255,6 +261,7 @@ gmw_sync_state_t next_state[NUM_OF_SYNC_EVENTS][NUM_OF_SYNC_STATES] =
     #define GMW_GET_PAYLOAD_LEN_PRIM0()         GMW_GET_PAYLOAD_LEN()
     #define GMW_GET_N_RX_PRIM0()                GMW_GET_N_RX()
     #define GMW_GET_N_RX_STARTED_PRIM0()        GMW_GET_N_RX_STARTED()
+    #define GMW_GET_RELAY_CNT_FIRST_RX_PRIM0()  GMW_GET_RELAY_CNT_FIRST_RX()
   #endif /* GMW_START_PRIM0 */
   #ifndef GMW_START_PRIM1
     #define GMW_START_PRIM1(a, b, c, d, e, f)
@@ -262,6 +269,7 @@ gmw_sync_state_t next_state[NUM_OF_SYNC_EVENTS][NUM_OF_SYNC_STATES] =
     #define GMW_GET_PAYLOAD_LEN_PRIM1()         0
     #define GMW_GET_N_RX_PRIM1()                0
     #define GMW_GET_N_RX_STARTED_PRIM1()        0
+    #define GMW_GET_RELAY_CNT_FIRST_RX_PRIM1()  GMW_RELAY_COUNT_UNDEF
   #endif /* GMW_START_PRIM1 */
   #ifndef GMW_START_PRIM2
     #define GMW_START_PRIM2(a, b, c, d, e, f)
@@ -269,6 +277,7 @@ gmw_sync_state_t next_state[NUM_OF_SYNC_EVENTS][NUM_OF_SYNC_STATES] =
     #define GMW_GET_PAYLOAD_LEN_PRIM2()         0
     #define GMW_GET_N_RX_PRIM2()                0
     #define GMW_GET_N_RX_STARTED_PRIM2()        0
+    #define GMW_GET_RELAY_CNT_FIRST_RX_PRIM2()  GMW_RELAY_COUNT_UNDEF
   #endif /* GMW_START_PRIM2 */
   #ifndef GMW_START_PRIM3
     #define GMW_START_PRIM3(a, b, c, d, e, f)
@@ -276,6 +285,7 @@ gmw_sync_state_t next_state[NUM_OF_SYNC_EVENTS][NUM_OF_SYNC_STATES] =
     #define GMW_GET_PAYLOAD_LEN_PRIM3()         0
     #define GMW_GET_N_RX_PRIM3()                0
     #define GMW_GET_N_RX_STARTED_PRIM3()        0
+    #define GMW_GET_RELAY_CNT_FIRST_RX_PRIM3()  GMW_RELAY_COUNT_UNDEF
   #endif /* GMW_START_PRIM3 */
 
   #if GMW_CONF_USE_CONTROL_SLOT_CONFIG
@@ -301,28 +311,33 @@ gmw_sync_state_t next_state[NUM_OF_SYNC_EVENTS][NUM_OF_SYNC_STATES] =
   #define GMW_STOP_PRIM() { \
     if(gmw_primitive == 0) { \
       GMW_STOP_PRIM0(); \
-      payload_len   = GMW_GET_PAYLOAD_LEN_PRIM0(); \
-      n_rx          = GMW_GET_N_RX_PRIM0(); \
-      n_rx_started  = GMW_GET_N_RX_STARTED_PRIM0(); \
+      payload_len     = GMW_GET_PAYLOAD_LEN_PRIM0(); \
+      n_rx            = GMW_GET_N_RX_PRIM0(); \
+      n_rx_started    = GMW_GET_N_RX_STARTED_PRIM0(); \
+      stats.relay_cnt = GMW_GET_RELAY_CNT_FIRST_RX_PRIM0(); \
     } else if(gmw_primitive == 1) { \
       GMW_STOP_PRIM1(); \
-      payload_len   = GMW_GET_PAYLOAD_LEN_PRIM1(); \
-      n_rx          = GMW_GET_N_RX_PRIM1(); \
-      n_rx_started  = GMW_GET_N_RX_STARTED_PRIM1(); \
+      payload_len     = GMW_GET_PAYLOAD_LEN_PRIM1(); \
+      n_rx            = GMW_GET_N_RX_PRIM1(); \
+      n_rx_started    = GMW_GET_N_RX_STARTED_PRIM1(); \
+      stats.relay_cnt = GMW_GET_RELAY_CNT_FIRST_RX_PRIM1();\
     } else if(gmw_primitive == 2) { \
       GMW_STOP_PRIM2(); \
-      payload_len   = GMW_GET_PAYLOAD_LEN_PRIM2(); \
-      n_rx          = GMW_GET_N_RX_PRIM2(); \
-      n_rx_started  = GMW_GET_N_RX_STARTED_PRIM2(); \
+      payload_len     = GMW_GET_PAYLOAD_LEN_PRIM2(); \
+      n_rx            = GMW_GET_N_RX_PRIM2(); \
+      n_rx_started    = GMW_GET_N_RX_STARTED_PRIM2(); \
+      stats.relay_cnt = GMW_GET_RELAY_CNT_FIRST_RX_PRIM2(); \
     } else if(gmw_primitive == 3) { \
       GMW_STOP_PRIM3(); \
-      payload_len   = GMW_GET_PAYLOAD_LEN_PRIM3(); \
-      n_rx          = GMW_GET_N_RX_PRIM3(); \
-      n_rx_started  = GMW_GET_N_RX_STARTED_PRIM3(); \
+      payload_len     = GMW_GET_PAYLOAD_LEN_PRIM3(); \
+      n_rx            = GMW_GET_N_RX_PRIM3(); \
+      n_rx_started    = GMW_GET_N_RX_STARTED_PRIM3(); \
+      stats.relay_cnt = GMW_GET_RELAY_CNT_FIRST_RX_PRIM3(); \
     } else { \
-      payload_len   = 0; \
-      n_rx          = 0; \
-      n_rx_started  = 0; \
+      payload_len     = 0; \
+      n_rx            = 0; \
+      n_rx_started    = 0; \
+      stats.relay_cnt = GMW_RELAY_COUNT_UNDEF; \
     } \
     gmw_primitive = 0; /* back to default primitive */ \
   }
@@ -330,9 +345,10 @@ gmw_sync_state_t next_state[NUM_OF_SYNC_EVENTS][NUM_OF_SYNC_STATES] =
   /* just use the default primitive */
   #define GMW_START_PRIM        GMW_START
   #define GMW_STOP_PRIM()       GMW_STOP(); \
-                                payload_len   = GMW_GET_PAYLOAD_LEN(); \
-                                n_rx          = GMW_GET_N_RX(); \
-                                n_rx_started  = GMW_GET_N_RX_STARTED();
+                                payload_len     = GMW_GET_PAYLOAD_LEN(); \
+                                n_rx            = GMW_GET_N_RX(); \
+                                n_rx_started    = GMW_GET_N_RX_STARTED(); \
+                                stats.relay_cnt = GMW_GET_RELAY_CNT_FIRST_RX();
 #endif /* GMW_CONF_USE_MULTI_PRIMITIVES */
 /*---------------------------------------------------------------------------*/
 #define GMW_IS_HOST             (node_id == HOST_ID)
@@ -362,7 +378,7 @@ uint8_t                         gmw_primitive;
 static void
 copy_control_if_updated(void);
 /*---------------------------------------------------------------------------*/
-const gmw_statistics_t * const
+gmw_statistics_t * const
 gmw_get_stats(void)
 {
   return &stats;
@@ -390,6 +406,7 @@ PT_THREAD(gmw_thread(gmw_rtimer_t *rt))
   static gmw_rtimer_clock_t     t_ref;
   static gmw_rtimer_clock_t     t_now;
   static gmw_rtimer_clock_t     start_of_next_round;
+  static gmw_rtimer_clock_t     start_of_current_round;
   static gmw_rtimer_clock_t     slot_start;
   static gmw_rtimer_clock_t     current_slot_time;
 
@@ -450,6 +467,8 @@ PT_THREAD(gmw_thread(gmw_rtimer_t *rt))
   /* ------------------------------ MAIN LOOP ------------------------------ */
   while(1) {
 
+    GMW_GPIO_ROUND_START;
+
     /* poll the pre process if applicable */
   #if GMW_CONF_T_PREPROCESS
     if(pre_post_proc.pre_process_next_round && pre_process_offset) {
@@ -482,6 +501,7 @@ PT_THREAD(gmw_thread(gmw_rtimer_t *rt))
         DEBUG_PRINT_ERROR("GMW t_start overrun by %ld ticks",
                           (uint32_t)(GMW_RTIMER_NOW() - start_of_next_round));
       }
+
       GMW_WAIT_UNTIL(start_of_next_round);
 
       /* set the time stamp for the start of this round */
@@ -492,13 +512,14 @@ PT_THREAD(gmw_thread(gmw_rtimer_t *rt))
 
       global_time     = control.schedule.time;
       rx_timestamp    = GMW_GET_T_REF();
-      stats.relay_cnt = GMW_GET_RELAY_CNT_FIRST_RX();
 
       /* inform implementation about control slot and update internal state */
       sync_state = gmw_impl->on_control_slot_post(&control,
                                                   GMW_EVT_CONTROL_RCVD,
                                                   GMW_EVT_PKT_OK);
-      if(!(GMW_RUNNING == sync_state || GMW_SUSPENDED == sync_state)) {
+      if( sync_state == GMW_DEFAULT ){
+        sync_state = GMW_RUNNING;
+      } else if(!(GMW_RUNNING == sync_state || GMW_SUSPENDED == sync_state)) {
         DEBUG_PRINT_ERROR("host on_control_slot_post returned invalid state!");
         while(1);
       }
@@ -510,9 +531,9 @@ BOOTSTRAP_MODE:
   #if GMW_CONF_USE_DRIFT_COMPENSATION
         period_last = 0;
   #endif /* GMW_CONF_USE_DRIFT_COMPENSATION */
-        /* Reset the part of the control that is supposed to be received.
-         * Right now, does not erase anything if static, can be extended 
-         * to clean the user bytes */
+        /* Reset the part of the control that is supposed to be received
+         * TODO right now, dont erase anything if static, extend to clean the
+         * user bytes */
         if((!GMW_CONF_USE_STATIC_SCHED) && (!GMW_CONF_USE_STATIC_CONFIG)) {
           memset(&control, 0, sizeof(control));
         }
@@ -593,6 +614,8 @@ BOOTSTRAP_MODE:
         }
       } else {
         DEBUG_PRINT_WARNING("Schedule missed or corrupted.");
+        /* mark config as non valid */
+        is_current_config_valid = 0;
         /* we can only estimate t_ref */
         t_ref += ((int32_t)control.schedule.period * GMW_RTIMER_SECOND +
            GMW_PPM_TO_TICKS((uint32_t)control.schedule.period * stats.drift)) /
@@ -625,7 +648,6 @@ BOOTSTRAP_MODE:
         }
   #endif /* GMW_CONF_USE_NOISE_DETECTION */
       }
-
       /* inform higher layer about control slot, update state machine */
       impl_sync_state = gmw_impl->on_control_slot_post(&control,
                                                        sync_event,
@@ -875,12 +897,17 @@ BOOTSTRAP_MODE:
     /* state keeping */
     uint32_t measured_round_time_ms =
                          (uint32_t)GMW_TICKS_TO_MS(GMW_RTIMER_NOW() - t_start);
-    /* sanity check */
+    /* sanity check - TODO: needed?*/
     if(GMW_PERIOD_TO_MS(control.schedule.period) < measured_round_time_ms) {
       DEBUG_PRINT_WARNING("Total measured round time %lums exceeds the round "
                         "period!", measured_round_time_ms);
     }
     stats.t_round_max = MAX(measured_round_time_ms, stats.t_round_max);
+    stats.t_round_last = (uint32_t)(GMW_RTIMER_NOW() - start_of_current_round);
+
+    start_of_current_round = start_of_next_round;
+
+    GMW_GPIO_ROUND_END;
 
     /* suspend this task */
     GMW_WAIT_UNTIL(start_of_next_round);

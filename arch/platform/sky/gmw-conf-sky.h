@@ -116,18 +116,20 @@
 
   #if GMW_PRIM1_ENABLE
   #define GMW_START_PRIM1(initiator_id, payload, payload_len, n_tx_max, sync, rf_cal) chaos_start(payload, payload_len, (initiator_id == node_id), n_tx_max, rf_cal)
-  #define GMW_STOP_PRIM1()             chaos_stop()
-  #define GMW_GET_PAYLOAD_LEN_PRIM1()  CHAOS_CONF_PAYLOAD_LEN
-  #define GMW_GET_N_RX_PRIM1()         chaos_get_rx_cnt()
-  #define GMW_GET_N_RX_STARTED_PRIM1() 0
+  #define GMW_STOP_PRIM1()                    chaos_stop()
+  #define GMW_GET_PAYLOAD_LEN_PRIM1()         CHAOS_CONF_PAYLOAD_LEN
+  #define GMW_GET_N_RX_PRIM1()                chaos_get_rx_cnt()
+  #define GMW_GET_N_RX_STARTED_PRIM1()        0
+  #define GMW_GET_RELAY_CNT_FIRST_RX_PRIM1()  GMW_RELAY_COUNT_UNDEF
   #endif /* GMW_PRIM1_ENABLE */
 
   #if GMW_PRIM2_ENABLE
   #define GMW_START_PRIM2(initiator_id, payload, payload_len, n_tx_max, sync, rf_cal) strobing_start((initiator_id == node_id), payload, payload_len, n_tx_max)
-  #define GMW_STOP_PRIM2()             strobing_stop()
-  #define GMW_GET_PAYLOAD_LEN_PRIM2()  strobing_get_payload_len()
-  #define GMW_GET_N_RX_PRIM2()         strobing_get_rx_cnt()
-  #define GMW_GET_N_RX_STARTED_PRIM2() strobing_get_rx_try_cnt()
+  #define GMW_STOP_PRIM2()                    strobing_stop()
+  #define GMW_GET_PAYLOAD_LEN_PRIM2()         strobing_get_payload_len()
+  #define GMW_GET_N_RX_PRIM2()                strobing_get_rx_cnt()
+  #define GMW_GET_N_RX_STARTED_PRIM2()        strobing_get_rx_try_cnt()
+  #define GMW_GET_RELAY_CNT_FIRST_RX_PRIM2()  GMW_RELAY_COUNT_UNDEF
   #endif /* GMW_PRIM2_ENABLE */
 #endif /* GMW_CONF_USE_MULTI_PRIMITIVES */
 
