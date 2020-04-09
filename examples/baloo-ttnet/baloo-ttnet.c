@@ -47,8 +47,9 @@
 #include "leds.h"
 /*---------------------------------------------------------------------------*/
 #include "ttnet.h"
+#include "ttnet_nodes.h"
+#include "ttnet_messages.h"
 /*---------------------------------------------------------------------------*/
-
 
 /*- GMW VARIABLES -----------------------------------------------------------*/
 static gmw_protocol_impl_t  host_impl;
@@ -56,28 +57,26 @@ static gmw_protocol_impl_t  src_impl;
 static gmw_control_t        control;
 /*---------------------------------------------------------------------------*/
 /*- TTW VARIABLES -----------------------------------------------------------*/
-static uint8_t counter;
-
-#ifdef FLOCKLAB
-static const uint16_t static_nodes[] = { 1, 2, 3, 4, 6,
-                                         7, 8,10,11,13,
-                                        14,15,16,17,18,
-                                        19,20,22,23,24,
-                                        25,26,27,28,32,
-                                        33};
-#else
-static const uint16_t static_nodes[] = { 1, 1, 2, 2 };
-#endif /* FLOCKLAB */
+static uint8_t dummy_counter;
+static uint8_t mode_change_counter = 0; /* dummy for emulating mode changes */
 
 static uint8_t is_synced = 0;
 static ttw_role_t node_role; /* sender, receiver, forwarder*/
 
+// rounds
 static uint8_t  current_round_id  = 0;
 static uint8_t  next_round_id     = 0;
 
+// modes
 static uint8_t  current_mode_id; // current mode   (associated to the round)
 static uint8_t  next_mode_id;    // announced mode (sent in the beacon)
 static uint8_t  switching_bit;
+
+// scheduling tables
+
+#define TTW_STARTING_MODE               1
+#define TTW_NUMBER_MODES                3
+#define TTW_NUMBER_ROUNDS               7
 
 static ttw_mode_t   mode_array[TTW_NUMBER_MODES];
 static ttw_round_t  round_array[TTW_NUMBER_ROUNDS];
@@ -88,6 +87,7 @@ static int16_t      current_message_id;
 
 static int16_t sched_table[TTW_NUMBER_ROUNDS][TTW_MAX_SLOTS_PER_ROUND];
 
+static gmw_statistics_t* stats_pt = NULL;
 /*
 
 TTW_ROUND_TIME
@@ -118,26 +118,12 @@ PROCESS_THREAD(app_process, ev, data)
 
   /* --- Application-specific initialization --- */
 
-  /* At this stage, it is not clear yet how we are going to handle the
-   * filling of the schedule info in memory.
-   * -> For now, we do everything by hand at initialization (aka, here)
-   */
-  mode_array[TTW_STARTING_MODE].hyperperiod     = 2000LU; // 2s
-  mode_array[TTW_STARTING_MODE].first_round_id  = 0;
-
   /* load the scheduling table in each node's memory */
   load_sched_table();
 
-  round_array[0].mode_id = 0;
-  round_array[0].n_slots = 3;
-  round_array[0].start_time_offset = 0;
+  /* get pointer to GMW stats */
+  stats_pt = gmw_get_stats();
 
-  round_array[1].mode_id = 0;
-  round_array[1].n_slots = 1;
-  round_array[1].start_time_offset = 700LU;
-
-
-  int i = 0;
 
   /* initialization of the application structures */
   gmw_init(&host_impl, &src_impl, &control);
@@ -146,16 +132,18 @@ PROCESS_THREAD(app_process, ev, data)
   gmw_start(&pre_process, &app_process, &host_impl, &src_impl);
 
   /* main loop of this application task */
+  int i = 0;
   while(1) {
     /* the app task should not do anything until it is explicitly granted
      * permission (by receiving a poll event) by the GMW task */
     PROCESS_YIELD_UNTIL(ev == PROCESS_EVENT_POLL);
 
     /* Check*/
-    for(i=0;i<2;i++){
-      DEBUG_PRINT_INFO("round %i: %i %i %i", i, sched_table[i][0],
+    for(i=0;i<4;i++){
+      DEBUG_PRINT_INFO("round %i: %i %i %i %i", i, sched_table[i][0],
                        sched_table[i][1],
-                       sched_table[i][2]);
+                       sched_table[i][2],
+                       sched_table[i][3]);
     }
 
     DEBUG_PRINT_INFO("Round finished");
@@ -163,6 +151,11 @@ PROCESS_THREAD(app_process, ev, data)
     DEBUG_PRINT_INFO("round "
         "period: (%lums)",
         GMW_PERIOD_TO_MS(mode_array[TTW_STARTING_MODE].hyperperiod));
+
+//    DEBUG_PRINT_WARNING("B: %u, T: %lu",
+//    									round_array[current_round_id].n_slots,
+//                     (uint32_t)(GMW_TICKS_TO_US(stats_pt->t_round_last)));
+//    DEBUG_PRINT_WARNING("slot time %lu", GMW_SLOT_TIME_TO_US(control.config.slot_time));
     debug_print_poll();
   }
 
@@ -293,7 +286,7 @@ on_slot_pre_callback(uint8_t slot_index,
 
   /* Skip unused slots */
   if(slot_index >= round_array[current_round_id].n_slots) {
-    return GMW_EVT_SKIP_SLOT;
+    return GMW_EVT_SKIP_ROUND;
   }
 
   /* Read the current message ID */
@@ -308,7 +301,7 @@ on_slot_pre_callback(uint8_t slot_index,
     // Copy the payload
     // -> eventually, will be a memcpy, done manually for now
     out_payload[0] = (uint8_t) node_id;
-    out_payload[1] = counter++;
+    out_payload[1] = dummy_counter++;
     *out_len = TTW_MAX_PAYLOAD_LEN;
 
   /* == Receiver == */
@@ -343,10 +336,6 @@ on_slot_post_callback(uint8_t   slot_index,
   }
  */
 
-  /* Skip unused slots */
-  if(slot_index >= round_array[current_round_id].n_slots) {
-    return GMW_EVT_NO_REPEAT;
-  }
 
   if(node_role == TTW_SENDER) {
 
@@ -374,15 +363,22 @@ on_slot_post_callback(uint8_t   slot_index,
     }
   }
 
-  // TTW never repeats slots */
-  return GMW_EVT_NO_REPEAT;
+  /* Notify the middleware when the last slot is reached */
+  if(slot_index+1 == round_array[current_round_id].n_slots) {
+    return GMW_EVT_END_ROUND;
+  } else {
+    return GMW_EVT_NO_REPEAT;
+  }
+
 }
 /*---------------------------------------------------------------------------*/
 static void
 on_round_finished(gmw_pre_post_processes_t* in_out_pre_post_processes)
 {
   /* Update the control
-   * -> done in the pre-process instead */
+   * -> done in the pre-process instead
+   * -> Why? To run as late as possible before the next round */
+
   // app_control_update(&control);
   // gmw_set_new_control(&control);
 
@@ -424,31 +420,26 @@ app_control_init(gmw_control_t* control)
   /* Add host-specific information */
   if(HOST_ID == node_id){
 
-    //TODO: wrong (in general) to correct!
-    control->schedule.period = round_array[1].start_time_offset
-                                  - round_array[0].start_time_offset;
+  	/* Set the round period for the first round */
+    uint8_t first_round = mode_array[TTW_STARTING_MODE].first_round_id;
+    if(round_array[first_round].mode_id != round_array[first_round+1].mode_id) {
+      // if the starting mode has only one round, use the mode hyperperiod
+    	control->schedule.period = mode_array[TTW_STARTING_MODE].hyperperiod;
+    } else {
+    	// else, take the difference of offsets of the first two rounds
+    	control->schedule.period = round_array[first_round+1].start_time_offset
+																- round_array[first_round].start_time_offset;
+    }
 
     /* user bytes
      * They are used to encode the TTW beacon informations
      */
     TTW_SET_BEACON_MODE(control, TTW_STARTING_MODE);
     TTW_SET_BEACON_ROUND(control, mode_array[TTW_STARTING_MODE].first_round_id);
-    TTW_SET_BEACON_SB(control);
+    TTW_CLR_BEACON_SB(control);
   }
 }
-/*---------------------------------------------------------------------------*/
-static void
-app_control_update(gmw_control_t* control)
-{
-  /* Dynamic update of the control
-   * -> Update of the beacon information -- host only
-   */
 
-  // No mode-change for the moment, just set the round id
-  // (already computed on the on_control_slot_post of the previous round)
-  TTW_CLR_BEACON_SB(control);
-  TTW_SET_BEACON_ROUND(control, next_round_id);
-}
 /*---------------------------------------------------------------------------*/
 static void
 load_sched_table()
@@ -462,30 +453,163 @@ load_sched_table()
    * For now, done manually.
    * */
 
-  if(node_id == 1) {
+  /* At this stage, it is not clear yet how we are going to handle the
+   * filling of the schedule info in memory.
+   * -> For now, we do everything by hand at initialization (aka, here)
+   */
+
+	/* Modes */
+  mode_array[0].hyperperiod     = 1000LU; /* ms */
+  mode_array[0].first_round_id  = 0;
+  mode_array[1].hyperperiod     = 1000LU; /* ms */
+  mode_array[1].first_round_id  = 4;
+  mode_array[2].hyperperiod     = 50LU; /* ms */
+  mode_array[2].first_round_id  = 6;
+
+  /* Rounds */
+  // Mode 0
+  round_array[0].mode_id = 0;
+  round_array[0].n_slots = 2;
+  round_array[0].start_time_offset = 5LU;
+
+  round_array[1].mode_id = 0;
+  round_array[1].n_slots = 3;
+  round_array[1].start_time_offset = 32LU;
+//  round_array[1].start_time_offset = 250LU; //32LU;
+
+  round_array[2].mode_id = 0;
+  round_array[2].n_slots = 1;
+  round_array[2].start_time_offset = 510LU;
+
+  round_array[3].mode_id = 0;
+  round_array[3].n_slots = 4;
+  round_array[3].start_time_offset = 539LU;
+//  round_array[3].start_time_offset = 729LU;
+  // --
+
+  // Mode 1
+	round_array[4].mode_id = 1;
+  round_array[4].n_slots = 2;
+  round_array[4].start_time_offset = 5LU;
+
+  round_array[5].mode_id = 1;
+  round_array[5].n_slots = 2;
+  round_array[5].start_time_offset = 505LU;
+  // --
+
+  // Mode 2
+	round_array[6].mode_id = 2;
+  round_array[6].n_slots = 1;
+  round_array[6].start_time_offset = 5LU;
+  // --
+
+  /* Scheduling tables */
+  if(node_id == SENSOR1) {
     int16_t sched_table_instance[TTW_NUMBER_ROUNDS][TTW_MAX_SLOTS_PER_ROUND] =  {
-      { 1, 0,-4} ,
-      { 3, 0, 0}
+			// M_ACT_1 M_BROADCAST
+      { M_ACK1, -M_BROADCAST } ,
+
+      // M_SENS_2, M_ACK1, M_ACK2
+      { 0, M_ACK1, 0} ,
+
+      // M_BROADCAST
+			{ -M_BROADCAST } ,
+
+			// M_SENS_1, M_SENS_2, M_ACK1, M_ACK2
+			{ M_SENS_1, 0, M_ACK1, 0} ,
+
+      // M_ACT_1, M_SENS_2
+      { 0, 0} ,
+
+			// M_SENS_1, M_SENS_2
+      { M_SENS_1, 0} ,
+
+      // M_ALERT
+      { M_ALERT } ,
     };
 
     /* Store in external variable */
     memcpy(&sched_table, &sched_table_instance,
            2*TTW_NUMBER_ROUNDS*TTW_MAX_SLOTS_PER_ROUND);
 
-  } else if(node_id == 2) {
+  } else if(node_id == SENSOR2) {
     int16_t sched_table_instance[TTW_NUMBER_ROUNDS][TTW_MAX_SLOTS_PER_ROUND] =  {
-      {-1, 2, 0} ,
-      {-3, 0, 0}
+			// M_ACT_1, M_BROADCAST
+			{ 0, -M_BROADCAST  } ,
+
+			// M_SENS_2, M_ACK1, M_ACK2
+			{ M_SENS_2, 0, M_ACK2} ,
+
+			// M_BROADCAST
+			{ -M_BROADCAST } ,
+
+			// M_SENS_1, M_SENS_2, M_ACK1, M_ACK2
+			{ 0, M_SENS_2, 0, M_ACK2} ,
+
+			// M_ACT_1, M_SENS_2
+			{ 0, M_SENS_2} ,
+
+			// M_SENS_1, M_SENS_2
+			{ 0, M_SENS_2} ,
+
+			// M_ALERT
+      { 0 } ,
     };
 
     /* Store in external variable */
     memcpy(&sched_table, &sched_table_instance,
            2*TTW_NUMBER_ROUNDS*TTW_MAX_SLOTS_PER_ROUND);
 
-  } else if(node_id == 3) {
+  } else if(node_id == ACTUATOR) {
     int16_t sched_table_instance[TTW_NUMBER_ROUNDS][TTW_MAX_SLOTS_PER_ROUND] =  {
-      { 0,-2, 4} ,
-      {-3, 0, 0}
+    	// M_ACT_1, M_BROADCAST
+			{ -M_ACT_1, 0 } ,
+
+			// M_SENS_2, M_ACK1, M_ACK2
+			{ 0, 0, 0} ,
+
+			// M_BROADCAST
+			{ 0 } ,
+
+			// M_SENS_1, M_SENS_2, M_ACK1, M_ACK2
+			{ 0, 0, 0, 0} ,
+
+			// M_ACT_1, M_SENS_2
+			{ -M_ACT_1, 0} ,
+
+			// M_SENS_1, M_SENS_2
+			{ 0, 0} ,
+
+			// M_ALERT
+      { 0 } ,
+    };
+
+    /* Store in external variable */
+    memcpy(&sched_table, &sched_table_instance,
+           2*TTW_NUMBER_ROUNDS*TTW_MAX_SLOTS_PER_ROUND);
+
+  } else if(node_id == CONTROLLER) {
+    int16_t sched_table_instance[TTW_NUMBER_ROUNDS][TTW_MAX_SLOTS_PER_ROUND] =  {
+			// M_ACT_1, M_BROADCAST
+			{ 0, M_BROADCAST } ,
+
+			// M_SENS_2, M_ACK1, M_ACK2
+			{ -M_SENS_2, -M_ACK1, -M_ACK2} ,
+
+			// M_BROADCAST
+			{ M_BROADCAST } ,
+
+			// M_SENS_1, M_SENS_2, M_ACK1, M_ACK2
+			{ -M_SENS_1, -M_SENS_2, -M_ACK1, -M_ACK2} ,
+
+			// M_ACT_1, M_SENS_2
+			{ M_ACT_1, -M_SENS_2} ,
+
+			// M_SENS_1, M_SENS_2
+			{ -M_SENS_1, -M_SENS_2} ,
+
+			// M_ALERT
+      { -M_ALERT } ,
     };
 
     /* Store in external variable */
@@ -494,6 +618,7 @@ load_sched_table()
 
   }
 }
+
 /*---------------------------------------------------------------------------
 static uint16_t
 get_round_period(uint16_t roundID)
@@ -512,50 +637,113 @@ is_my_message(uint16_t message_id){
 
 /*---------------------------------------------------------------------------*/
 static void
+app_control_update(gmw_control_t* control)
+{
+  /* Dynamic update of the control
+   * -> Update of the beacon information -- host only
+   */
+
+	/* Basic mode change: switch statically:
+	 * start on mode 1 (normal)
+	 * mode_change_counter == 10 -> switch to mode 2 (emergency)
+	 * mode_change_counter == 20 -> switch to mode 1 (normal)
+	 * mode_change_counter == 30 -> switch to mode 0 (normal + update)
+	 */
+	mode_change_counter++;
+	if(mode_change_counter == 10) {
+
+		// Switch to mode 2
+		TTW_SET_BEACON_MODE(control, 2);
+		// Set the SB
+		TTW_SET_BEACON_SB(control);
+		// Set the new round id
+		TTW_SET_BEACON_ROUND(control, next_round_id);
+
+	} else if(mode_change_counter == 20) {
+
+			// Switch to mode 1
+			TTW_SET_BEACON_MODE(control, 1);
+			// Set the SB
+			TTW_SET_BEACON_SB(control);
+			// Set the new round id
+			TTW_SET_BEACON_ROUND(control, next_round_id);
+
+	} else if(mode_change_counter == 30) {
+
+			// Switch to mode 0
+			TTW_SET_BEACON_MODE(control, 0);
+			// Set the SB
+			TTW_SET_BEACON_SB(control);
+			// Set the new round id
+			TTW_SET_BEACON_ROUND(control, next_round_id);
+
+	} else {
+		// No mode-change for the moment, just set the round id
+		// (already computed on the on_control_slot_post of the previous round)
+		TTW_CLR_BEACON_SB(control);
+		TTW_SET_BEACON_ROUND(control, next_round_id);
+	}
+}
+/*---------------------------------------------------------------------------*/
+static void
 app_control_static_update(gmw_control_t* control)
 {
   /* Static update of the control
    * -> Locally reconstruct the control information based on the beacon
-   * -> Done by all nodes in the on_control_slot_post_callback()
+   * -> Call by all nodes in the on_control_slot_post_callback()
    */
 
   /* Extract beacon information */
   current_round_id  = TTW_GET_BEACON_ROUND(control);
-  current_mode_id   = TTW_GET_BEACON_MODE(control);
+  next_mode_id      = TTW_GET_BEACON_MODE(control);
   switching_bit     = TTW_GET_BEACON_SB(control);
 
-  /* Handle mode switches */
-  // Not yet implemented
-  next_mode_id = current_mode_id;
+  /* Handle mode switches
+   * -> change right away for now, which means current_mode_id always hold the latest
+   * mode information */
+  if(switching_bit) {
+  	DEBUG_PRINT_WARNING("mode change!")
+  	next_round_id = mode_array[next_mode_id].first_round_id;
 
-  /* Assuming no mode change, compute:
-   * - the next round ID
-   * - the corresponding round period
-   * */
-
-  //TODO: adapt this update, currently works only because there is only one mode
-  next_round_id = (current_round_id + 1)%TTW_NUMBER_ROUNDS;
-
-  if((next_round_id == current_round_id) ||
-     (round_array[next_round_id].mode_id != current_mode_id) ||
-     (TTW_NUMBER_MODES == 1 && next_round_id < current_round_id)){
-    /* Either:
-     * - There is only one round in the mode (cond. 1), or
-     * - The last round in the mode schedule is reached (cond. 2 and 3)
-     * Overwrite the next_round_id and compute the corresponding period
-     */
-    next_round_id = mode_array[current_mode_id].first_round_id;
-    control->schedule.period = round_array[next_round_id].start_time_offset
-                            - round_array[current_round_id].start_time_offset
-                            + mode_array[current_mode_id].hyperperiod;
+  	/* Set the start of the new mode conservatively!
+  	 * -> One must make sure that the previous round is finished by the time the new round is scheduled.
+  	 * We do things (very) conservatively here, but at least it's safe
+  	 * (all rounds are shorter than the round hyperperiod)
+  	 */
+  	control->schedule.period = round_array[next_round_id].start_time_offset
+  															+ mode_array[current_mode_id].hyperperiod; 	// safety margin
   } else {
-    control->schedule.period = round_array[next_round_id].start_time_offset
-                            - round_array[current_round_id].start_time_offset;
+		/* Assuming no mode change, compute:
+		 * - the next round ID
+		 * - the corresponding round period
+		 * */
 
+		//TODO this needs to be written down VERY carefully. Might buggy right now...
+		next_round_id = (current_round_id + 1)%TTW_NUMBER_ROUNDS;
+		if((next_round_id == current_round_id) ||
+			 (round_array[next_round_id].mode_id != next_mode_id) ||
+			 (TTW_NUMBER_MODES == 1 && next_round_id < current_round_id)){
+			/* Either:
+			 * - There is only one round in the mode (cond. 1), or
+			 * - The last round in the mode schedule is reached (cond. 2 and 3)
+			 * Overwrite the next_round_id and compute the corresponding period
+			 */
+			next_round_id = mode_array[current_mode_id].first_round_id;
+			control->schedule.period = round_array[next_round_id].start_time_offset
+															- round_array[current_round_id].start_time_offset
+															+ mode_array[current_mode_id].hyperperiod;
+		} else {
+			control->schedule.period = round_array[next_round_id].start_time_offset
+															- round_array[current_round_id].start_time_offset;
+
+		}
   }
 
   /* Load the current round schedule information */
   current_round_pt = &(round_array[current_round_id]);
+
+  /* update the mode information */
+  current_mode_id = next_mode_id;
 
 }
 /*---------------------------------------------------------------------------*/

@@ -78,7 +78,7 @@ typedef struct __attribute__((packed)) ttw_round {
 
 /* Mode */
 #define TTW_SET_BEACON_MODE(c,modeID) \
-  ((c)->user_bytes[1] |= ((0x7f) & (uint8_t)(modeID)))
+  ((c)->user_bytes[1] = (((0x7f) & (uint8_t)(modeID))) | (((c)->user_bytes[1]) & (0x80)))
 #define TTW_GET_BEACON_MODE(c) \
   (((c)->user_bytes[1]) & (0x7f))
 

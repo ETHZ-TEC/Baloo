@@ -3,6 +3,8 @@ CONTIKI = ../..
 
 
 TARGET ?= dpp
+#TARGET ?= sky
+
 # for convenience only
 ifeq ($(TARGET), dpp)
   override TARGET = dpp-cc430
@@ -15,7 +17,6 @@ MAKE_MAC = MAKE_MAC_NULLMAC
 MAKE_NET = MAKE_NET_NULLNET
 MODULES += os/net/mac/gmw
 PROJECT_SOURCEFILES += gmw-platform.c rtimer-ext.c glossy.c
-#PROJECT_CONF_PATH = project-conf.h
 CFLAGS += -DPLATFORM_$(shell echo $(TARGET) | tr a-z\- A-Z_) -DGMW_PLATFORM_CONF_PATH=\"gmw-conf-$(TARGET).h\"
 
 LDFLAGS += -Wl,--section-start -Wl,.testbedConfigSection=0xd400
