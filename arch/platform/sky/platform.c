@@ -66,6 +66,9 @@ extern int msp430_dco_required;
 #include "experiment-setup.h"
 #endif
 
+uint16_t FLOCKLAB_NODE_ID = 0xbeef;    /* any value is ok, will be overwritten by FlockLab */
+
+
 void init_platform(void);
 /*---------------------------------------------------------------------------*/
 /* Log configuration */
@@ -119,10 +122,6 @@ set_lladdr(void)
   linkaddr_set_node_addr(&addr);
 }
 /*---------------------------------------------------------------------------*/
-#if WITH_TINYOS_AUTO_IDS
-uint16_t TOS_NODE_ID = 0x1234; /* non-zero */
-uint16_t TOS_LOCAL_ADDRESS = 0x1234; /* non-zero */
-#endif /* WITH_TINYOS_AUTO_IDS */
 void
 platform_init_stage_one(void)
 {
@@ -164,12 +163,13 @@ platform_init_stage_two(void)
    * Hardware initialization done!
    */
 
-#if WITH_TINYOS_AUTO_IDS
-  node_id = TOS_NODE_ID;
-#else /* WITH_TINYOS_AUTO_IDS */
+#if USE_FLOCKLAB_NODE_ID
+  /* Use FLOCKLAB_NODE_ID to enable patching by FlockLab */
+  node_id = FLOCKLAB_NODE_ID;
+#else
   /* Restore node id if such has been stored in external mem */
   node_id_restore();
-#endif /* WITH_TINYOS_AUTO_IDS */
+#endif 
 
   /* for setting "hardcoded" IEEE 802.15.4 MAC addresses */
 #ifdef IEEE_802154_MAC_ADDRESS

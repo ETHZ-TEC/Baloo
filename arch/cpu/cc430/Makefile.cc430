@@ -58,7 +58,7 @@ ifndef CFLAGSNO
 CFLAGSNO = -Wall -mmcu=$(CC_MCU) $(CFLAGSWERROR)
 endif
 CFLAGS  += -Os
-LDFLAGS = -mmcu=$(CC_MCU) -Wl,--gc-sections -ggdb -Wl,-Map=$(CONTIKI_NG_PROJECT_MAP)
+LDFLAGS += -mmcu=$(CC_MCU) -Wl,--gc-sections -ggdb -Wl,-Map=$(CONTIKI_NG_PROJECT_MAP)
 
 ### These flags can reduce the code size and RAM usage with up to 10%
 SMALL ?= 1

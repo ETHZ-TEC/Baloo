@@ -93,11 +93,11 @@
 
 /* --- GENERAL definitions --- */
 
-#define HOST_ID                         1
+#define HOST_ID                         5
 
 /* GMW configuration */
 #define GMW_CONF_MAX_DATA_PKT_LEN       16
-#define GMW_CONF_MAX_SLOTS              26
+#define GMW_CONF_MAX_SLOTS              8
 #define GMW_CONF_TX_CNT_DATA            2
 #define GMW_CONF_PERIOD_TIME_BASE       GMW_CONF_PERIOD_TIME_BASE_1ms
 

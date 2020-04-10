@@ -738,6 +738,11 @@ BOOTSTRAP_MODE:
                                            IS_INITIATOR,
                                            IS_CONTENTION_SLOT);
 
+        /* Check for end-of-round event */
+        if(skip_event ==  GMW_EVT_SKIP_ROUND) {
+        	goto TERMINATE_ROUND;
+        }
+
         /* set t_now, this allows us to determine if we missed the slot */
         t_now = GMW_RTIMER_NOW();
 
@@ -833,6 +838,11 @@ BOOTSTRAP_MODE:
                                GMW_TICKS_TO_US(GMW_RTIMER_NOW() - t_now),
                                stats.t_proc_max);
 
+        /* Check for end-of-round event */
+        if(repeat_event ==  GMW_EVT_END_ROUND) {
+        	goto TERMINATE_ROUND;
+        }
+
         /* update the start time of the next slot */
         slot_start += current_slot_time + 
                       GMW_GAP_TIME_TO_TICKS(current_config->gap_time);
@@ -859,6 +869,7 @@ BOOTSTRAP_MODE:
       }
     }
 
+TERMINATE_ROUND:
     gmw_impl->on_round_finished(&pre_post_proc);
 
     /* --- COMMUNICATION ROUND ENDS --- */
@@ -931,7 +942,7 @@ BOOTSTRAP_MODE:
     /* sanity check - TODO: needed?*/
     if(GMW_PERIOD_TO_MS(control.schedule.period) < measured_round_time_ms) {
       DEBUG_PRINT_WARNING("Total measured round time %lums exceeds the round "
-                        "period!", measured_round_time_ms);
+                        "period! (%lums)", measured_round_time_ms, GMW_PERIOD_TO_MS(control.schedule.period));
     }
     stats.t_round_max = MAX(measured_round_time_ms, stats.t_round_max);
     stats.t_round_last = (uint32_t)(GMW_RTIMER_NOW() - start_of_current_round);

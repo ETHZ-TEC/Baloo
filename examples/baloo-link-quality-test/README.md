@@ -30,7 +30,7 @@ This can be modified after compilation by binary patching (see below)
 
 The serial log is produced at the end of the test. They are formatted
 as follows:
-```
+```c
 Log:X:Y:Z[0].Z[1]. (...) .Z[n]
 ```
 where  
@@ -91,8 +91,8 @@ The user can patch
 - the radio frequency channel, by patching `rf_channel`
 
 The patching command is:
-```
-./tos-set-symbols --exe --objcopy msp430-objcopy --objdump msp430-objdump baloo-link-quality-test.TARGET baloo-link-quality-test.dpp-cc430 
+```bash
+./tos-set-symbols --exe --objcopy msp430-objcopy --objdump msp430-objdump baloo-link-quality-test.TARGET baloo-link-quality-test.dpp-cc430
 rf_channel=YOUR_CHANNEL payload_length=YOUR_PAYLOAD randomseed=YOUR_SEED host_id=YOUR_HOST
 ```
 
@@ -108,4 +108,3 @@ your testbed!
 |:---|:---|
 |TelosB | make TARGET=sky |
 |DPP-cc430 | make TARGET=dpp |
-

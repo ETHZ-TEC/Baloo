@@ -26,6 +26,10 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Author:  Jonas Bächli
+ *          Romain Jacob
+ *          Reto Da Forno
  */
 
 #ifndef PROJECT_CONF_H_
@@ -34,6 +38,9 @@
 /*
  * application specific config file to override default settings
  */
+
+/* Disable the radio */
+#define RF_CONF_ON    0
 
 #ifdef FLOCKLAB
   #include "../../tools/flocklab/flocklab.h"

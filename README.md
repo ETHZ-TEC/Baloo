@@ -1,5 +1,8 @@
 # Baloo
 
+> The Baloo code is archived on Zenodo  
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3510171.svg)](https://doi.org/10.5281/zenodo.3510171)
+
 Baloo is a design framework for network stacks based on Synchronous Transmissions (i.e., using a flooding protocol like [Glossy](https://sourceforge.net/p/contikiprojects/code/HEAD/tree/ethz.ch/glossy/) as underlying communication primitive). Baloo is flexible enough to implement a wide variety of network layer protocols, while introducing only limited memory and energy overhead. 
 
 Using Baloo, one can relatively easily re-implement network layer protocols like the [Low-power Wireless Bus](https://github.com/ETHZ-TEC/LWB/blob/master/doc/papers/LWBSenSys12.pdf), [Crystal](http://disi.unitn.it/~picco/papers/ipsn18.pdf), and [Sleeping Beauty](http://www.chayansarkar.com/papers/chayan_mass16.pdf).
@@ -11,6 +14,14 @@ Proceedings of the 2019 International Conference on Embedded Wireless Systems an
 [Direct Link](https://www.research-collection.ethz.ch/handle/20.500.11850/324254)
 
 Unless explicitly stated otherwise, all Baloo sources are distributed under the terms of the [3-clause BSD license](license). This license gives everyone the right to use and distribute the code, either in binary or source code format, as long as the copyright license is retained in the source code.
+
+## How to cite Baloo
+
+To cite Baloo, please use the paper listed above. If you want to cite specifically the code, please use the Zenodo archive corresponding to the version you want to cite.
+> *Baloo*   
+Romain Jacob, Jonas Bächli, Reto Da Forno.   
+Version x.y. Zenodo.   
+http://doi.org/10.5281/zenodo.XXXXXXX
 
 ## Online presence
 * GitHub repository   [github.com/ETHZ-TEC/Baloo](https://github.com/ETHZ-TEC/Baloo)

@@ -4,6 +4,11 @@ MAKE_NET = MAKE_NET_NULLNET
 CONTIKI = ../..
 
 TARGET ?= sky
+# for convenience only
+ifeq ($(TARGET), dpp)
+  override TARGET = dpp-cc430
+endif
+
 CFLAGS += -DPLATFORM_$(shell echo $(TARGET) | tr a-z\- A-Z_)
 
 all: $(CONTIKI_PROJECT)

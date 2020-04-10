@@ -1,9 +1,7 @@
 |Platform| Compilation command |
 |:---|:---|
-|TelosB 
-  | make TARGET=sky |
-|DPP-cc430 
-  | make TARGET=dpp |
+|TelosB   | make TARGET=sky |
+|DPP-cc430   | make TARGET=dpp |
 
 This directory contains an re-implementation of the LWB protocol, meant to be as similar as possible as the descritption from 
 > *Low-power Wireless Bus*,  

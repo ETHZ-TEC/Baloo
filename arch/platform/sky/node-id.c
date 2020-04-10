@@ -41,7 +41,7 @@
 #include "contiki.h"
 #include "dev/xmem.h"
 
-unsigned short node_id = 0;
+volatile unsigned short node_id = 0; /* must be volative */
 
 /*---------------------------------------------------------------------------*/
 void

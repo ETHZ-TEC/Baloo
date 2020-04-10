@@ -38,6 +38,6 @@
 void node_id_restore(void);
 void node_id_burn(unsigned short node_id);
 
-extern unsigned short node_id;
+extern volatile unsigned short node_id;
 
 #endif /* NODE_ID_H_ */

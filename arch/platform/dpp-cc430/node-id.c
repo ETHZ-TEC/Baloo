@@ -41,8 +41,8 @@
 #include "contiki.h"
 #include "dev/xmem.h"
 
-uint16_t TOS_NODE_ID = 0x1122; /* do NOT change this default value! */
-unsigned short node_id;
+uint16_t FLOCKLAB_NODE_ID = 0x1122; /* any value is ok, will be overwritten by FlockLab */
+volatile unsigned short node_id;    /* must be volative */
 
 /*---------------------------------------------------------------------------*/
 void

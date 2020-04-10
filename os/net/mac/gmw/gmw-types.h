@@ -208,10 +208,11 @@ typedef enum {
  *                              if the coming slot should be executed or skipped
  */
 typedef enum {
+  GMW_EVT_SKIP_DEFAULT = 0,    /* Default = no skip */
   GMW_EVT_NO_SKIP = 0,         /* The slot is executed normally */
   GMW_EVT_SKIP_SLOT = 1,       /* The slot is skipped:
                                 * the node turns off its radio */
-  GMW_EVT_SKIP_DEFAULT = 0     /* Default = no skip */
+  GMW_EVT_SKIP_ROUND = 2,      /* Skip slot and terminate the round */
 } gmw_skip_event_t;
 
 /**
@@ -222,10 +223,11 @@ typedef enum {
  *                              repeated.
  */
 typedef enum {
+  GMW_EVT_REPEAT_DEFAULT = 0,   /* Default = 'NO_REPEAT' */
   GMW_EVT_NO_REPEAT = 0,       /* No repetition */
   GMW_EVT_REPEAT_SLOT = 1,     /* Repeat the last data slot */
   GMW_EVT_REPEAT_ROUND = 2,    /* Start over the complete round */
-  GMW_EVT_REPEAT_DEFAULT = 0   /* Set default same as 'NO_REPEAT' */
+  GMW_EVT_END_ROUND = 3,       /* Terminate the round */
 } gmw_repeat_event_t;
 /*---------------------------------------------------------------------------*/
 

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testConf xmlns="http://www.flocklab.ethz.ch" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.flocklab.ethz.ch xml/flocklab.xsd">
+	<!-- General configuration -->
+	<generalConf>
+		<name>Name</name>
+		<description>Description</description>
+		<scheduleAsap>
+			<durationSecs>20</durationSecs>
+		</scheduleAsap>
+		<!--<scheduleAbsolute>
+			<start>2018-05-28T02:14:00Z</start>
+			<end>2018-05-28T03:14:00Z</end>
+		</scheduleAbsolute>-->
+		<emailResults>no</emailResults>
+	</generalConf>
+	
+	<!-- Target configuration -->
+	<targetConf>
+		<obsIds>ALL</obsIds>
+		<voltage>3.3</voltage>
+		<embeddedImageId>SkyImage</embeddedImageId>
+	</targetConf>
+    
+	<!-- Serial Service configuration -->
+    <serialConf>
+		<obsIds>ALL</obsIds>
+		<port>usb</port>
+		<baudrate>115200</baudrate>
+		<remoteIp>255.255.255.255</remoteIp>
+	</serialConf>
+	
+	<!-- GPIO Tracing Service configuration -->
+	<gpioTracingConf>
+		<obsIds>ALL</obsIds>
+        <!-- All pins need to be listed in the same tag -->
+		<pins>LED1 LED2 LED3 INT1 INT2</pins>        
+	</gpioTracingConf>
+
+	
+	<!-- GPIO Actuation Service configuration -->
+	<!--<gpioActuationConf>
+		<obsIds>ALL</obsIds>
+		<pinConf>
+			<pin>SIG1</pin>
+			<level>toggle</level>
+			<relativeTime>
+				<offsetSecs>300</offsetSecs>
+			</relativeTime>
+		</pinConf>
+		<pinConf>
+			<pin>SIG1</pin>
+			<level>toggle</level>
+			<relativeTime>
+				<offsetSecs>310</offsetSecs>
+				<offsetMicrosecs>999999</offsetMicrosecs>
+			</relativeTime>
+		</pinConf>
+	</gpioActuationConf>-->
+	
+	<!-- Power Profiling Service configuration (Forwarding nodes only) -->
+	<!--<powerProfilingConf>
+        <obsIds> </obsIds>
+        <duration>30</duration>
+        <offset>5</offset>
+        <samplingRate>0.02</samplingRate>
+	</powerProfilingConf>-->
+	
+	<embeddedImageConf>
+		<embeddedImageId>SkyImage</embeddedImageId>
+		<name>Sky image</name>
+		<description>Tmote Sky app</description>
+		<platform>tmote</platform>
+		<data>
+        </data>
+    </embeddedImageConf>
+</testConf>

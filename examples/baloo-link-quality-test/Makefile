@@ -18,7 +18,7 @@ CFLAGS += -DPAYLOAD_LEN=8
 # select the random seed
 CFLAGS += -DRANDOM_SEED=123
 # select the host
-CFLAGS += -DHOST_ID_MAKEFILE=10
+CFLAGS += -DHOST_ID_MAKEFILE=5
 
 # Mark as a Baloo project
 CFLAGS += -DBALOO

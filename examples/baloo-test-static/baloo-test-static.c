@@ -57,12 +57,15 @@ static gmw_control_t        control;
 static uint8_t counter;
 
 #ifdef FLOCKLAB
-static const uint16_t static_nodes[] = { 1, 2, 3, 4, 6,
+/*static const uint16_t static_nodes[GMW_CONF_MAX_SLOTS] =
+                                       { 1, 2, 3, 4, 6,
                                          7, 8,10,11,13,
                                         14,15,16,17,18,
                                         19,20,22,23,24,
                                         25,26,27,28,32,
-                                        33};
+                                        33 };*/
+static const uint16_t static_nodes[GMW_CONF_MAX_SLOTS] =
+                                       { 11, 10, 9, 7, 6, 5, 4, 2 };
 #else
 static const uint16_t static_nodes[] = { 1, 1, 2, 2 };
 #endif /* FLOCKLAB */

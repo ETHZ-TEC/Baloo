@@ -1,9 +1,7 @@
 |Platform| Compilation command |
 |:---|:---|
-|TelosB 
-  | make TARGET=sky |
-|DPP-cc430 
-  | make TARGET=dpp |
+|TelosB   | make TARGET=sky |
+|DPP-cc430   | make TARGET=dpp |
 
 This directory contains an re-implementation of the Crystal protocol, meant to be as similar as possible as the descritption from 
 > *Interference-resilient Ultra-low Power Aperiodic Data Collection*,  

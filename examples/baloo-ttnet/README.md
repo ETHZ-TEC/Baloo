@@ -49,7 +49,7 @@ Should should obtain an output similar to the following:
 
 The four different phases correspond to the different modes (see [Short description](#Short-description)). In the last mode (normal + update), the load increases compare to the third mode (normal), leading to a increase in number of rounds.
 
-If you zoom in the plot (simply scroll with your mouse), you can observer the communication slots (in red) and the Glossy phases: transmissions (TX, in yellow) and receptions (RX, in blue).
+If you zoom in the plot (simply scroll with your mouse), you can observe the communication rounds (in red), the slots (in blue), and the transmissions phases of Glossy (TX, in yellow)
 
 The delay between the modes is due to the very basic mode change protocol currently implemented: the start of the new mode is delayed by one hyperperiod of the current mode. This is (very!) conservative but simple and guarantees rounds in the new and old mode do not overlap.
 

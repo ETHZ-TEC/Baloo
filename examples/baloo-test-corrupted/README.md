@@ -1,9 +1,7 @@
 |Platform| Compilation command |
 |:---|:---|
-|TelosB 
-  | make TARGET=sky |
-|DPP-cc430 
-  | make TARGET=dpp |
+|TelosB   | make TARGET=sky |
+|DPP-cc430   | make TARGET=dpp |
  
 This protocol illustrates the use of the interference detection feature. It is controlled (in `project-conf.h) by the following defines:
 

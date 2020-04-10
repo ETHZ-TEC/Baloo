@@ -107,6 +107,10 @@ PROCESS_THREAD(app_process, ev, data)
 { 
   PROCESS_BEGIN();
 
+  DEBUG_PRINT_MSG_NOW("GMW_CONF_T_DATA %lu", GMW_CONF_T_DATA);
+  DEBUG_PRINT_MSG_NOW("GMW_CONF_T_CONTROL %lu", GMW_CONF_T_CONTROL);
+  DEBUG_PRINT_MSG_NOW("GMW_CONF_MAX_DATA_PKT_LEN %u", GMW_CONF_MAX_DATA_PKT_LEN);
+
 
   /* --- Application-specific initialization --- */
 

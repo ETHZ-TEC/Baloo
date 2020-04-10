@@ -1,9 +1,10 @@
 
 DESCRIPTION ?= Test app
-TESTDURATION ?= 120
+TESTDURATION ?= 20
+TESTID ?=0
 
 FLOCKLABTOOLS = ../../tools/flocklab/
-XMLTEMPLATE = flocklab-$(TARGET)-template.xml
+XMLTEMPLATE = flocklab2-$(TARGET)-template.xml
 XMLFILE = flocklab-$(TARGET).xml
 
 ifdef FLOCKLAB
@@ -13,7 +14,7 @@ ifdef FLOCKLAB
   endif
 endif
 
-CLEAN += flocklab-$(TARGET).xml
+CLEAN += flocklab-$(TARGET).xml flocklab_testresults_[0-9]*.tar.gz out.html
 
 GITSHA = ${shell git rev-parse HEAD | head -c8}
 
@@ -28,4 +29,11 @@ flocklab_xml:
 	@rm $(CONTIKI_PROJECT).$(TARGET).b64
 
 flocklab_test: flocklab_xml
-	$(FLOCKLABTOOLS)flocklab -c $(XMLFILE)
+	@flocklab -c $(XMLFILE)
+	
+flocklab_fetch:
+	@echo "Downloading TESTID=$(TESTID) ..."
+	@flocklab -g $(TESTID)
+
+flocklab_viz: flocklab_fetch
+	@flocklab -x $(TESTID)

@@ -56,7 +56,7 @@ static void init_gpio(void);
 static void print_device_info(void);
 /*---------------------------------------------------------------------------*/
 static uint16_t rst_flag;
-extern uint16_t TOS_NODE_ID;
+extern uint16_t FLOCKLAB_NODE_ID;
 /*---------------------------------------------------------------------------*/
 void
 platform_init_stage_one()
@@ -88,7 +88,7 @@ void
 platform_init_stage_two()
 {
 #ifndef NODE_ID
-  node_id = TOS_NODE_ID;
+  node_id = FLOCKLAB_NODE_ID;
 #else
   node_id = NODE_ID;
 #endif /* NODE_ID */

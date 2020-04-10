@@ -1,9 +1,7 @@
 |Platform| Compilation command |
 |:---|:---|
-|TelosB 
-  | make TARGET=sky |
-|DPP-cc430 
-  | make TARGET=dpp |
+|TelosB   | make TARGET=sky |
+|DPP-cc430   | make TARGET=dpp |
 
 This simple Baloo protocol illustrates the utilization of the Strobing as communication primitive.
 

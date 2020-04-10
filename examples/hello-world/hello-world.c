@@ -56,15 +56,18 @@ PROCESS_THREAD(hello_world_process, ev, data)
   while(1) {
     LOG_INFO("hello world\n");
 
-#ifdef FLOCKLAB
-    LED_TOGGLE(FLOCKLAB_LED1);
-    LED_TOGGLE(FLOCKLAB_LED2);
-    LED_TOGGLE(FLOCKLAB_LED3);
-    LED_TOGGLE(FLOCKLAB_INT1);
-    LED_TOGGLE(FLOCKLAB_INT2);
-#else
-    LED_TOGGLE(LED_STATUS);
-#endif /* FLOCKLAB */
+		#ifdef FLOCKLAB
+			LED_TOGGLE(FLOCKLAB_LED1);
+			LED_TOGGLE(FLOCKLAB_INT1);
+			LED_TOGGLE(FLOCKLAB_INT2);
+			#ifndef PLATFORM_DPP_CC430
+				// LED 2 and 3 unavailable for the DPP_CC430
+				LED_TOGGLE(FLOCKLAB_LED2);
+				LED_TOGGLE(FLOCKLAB_LED3);
+			#endif /* PLATFORM_DPP_CC430 */
+		#else
+			LED_TOGGLE(LED_STATUS);
+		#endif /* FLOCKLAB */
 
     /* Wait for the periodic timer to expire and then restart the timer. */
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&timer));

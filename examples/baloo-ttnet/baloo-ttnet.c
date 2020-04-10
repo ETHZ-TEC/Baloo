@@ -459,35 +459,40 @@ load_sched_table()
    */
 
 	/* Modes */
+
+	// Normal+Update (0)
   mode_array[0].hyperperiod     = 1000LU; /* ms */
   mode_array[0].first_round_id  = 0;
+  // Normal (1)
   mode_array[1].hyperperiod     = 1000LU; /* ms */
   mode_array[1].first_round_id  = 4;
+  // Emergency (2)
   mode_array[2].hyperperiod     = 50LU; /* ms */
   mode_array[2].first_round_id  = 6;
+  // --
+
 
   /* Rounds */
-  // Mode 0
+
+  // Normal+Update (0)
   round_array[0].mode_id = 0;
-  round_array[0].n_slots = 2;
-  round_array[0].start_time_offset = 5LU;
+  round_array[0].n_slots = 1;
+  round_array[0].start_time_offset = 120LU;
 
   round_array[1].mode_id = 0;
-  round_array[1].n_slots = 3;
-  round_array[1].start_time_offset = 32LU;
-//  round_array[1].start_time_offset = 250LU; //32LU;
+  round_array[1].n_slots = 4;
+  round_array[1].start_time_offset = 139LU;
 
   round_array[2].mode_id = 0;
   round_array[2].n_slots = 1;
-  round_array[2].start_time_offset = 510LU;
+  round_array[2].start_time_offset = 620LU;
 
   round_array[3].mode_id = 0;
   round_array[3].n_slots = 4;
-  round_array[3].start_time_offset = 539LU;
-//  round_array[3].start_time_offset = 729LU;
+  round_array[3].start_time_offset = 639LU;
   // --
 
-  // Mode 1
+  // Normal (1)
 	round_array[4].mode_id = 1;
   round_array[4].n_slots = 2;
   round_array[4].start_time_offset = 5LU;
@@ -497,7 +502,7 @@ load_sched_table()
   round_array[5].start_time_offset = 505LU;
   // --
 
-  // Mode 2
+  // Emergency (2)
 	round_array[6].mode_id = 2;
   round_array[6].n_slots = 1;
   round_array[6].start_time_offset = 5LU;
@@ -506,25 +511,25 @@ load_sched_table()
   /* Scheduling tables */
   if(node_id == SENSOR1) {
     int16_t sched_table_instance[TTW_NUMBER_ROUNDS][TTW_MAX_SLOTS_PER_ROUND] =  {
-			// M_ACT_1 M_BROADCAST
-      { M_ACK1, -M_BROADCAST } ,
-
-      // M_SENS_2, M_ACK1, M_ACK2
-      { 0, M_ACK1, 0} ,
-
-      // M_BROADCAST
+			// M_BROADCAST
 			{ -M_BROADCAST } ,
 
 			// M_SENS_1, M_SENS_2, M_ACK1, M_ACK2
 			{ M_SENS_1, 0, M_ACK1, 0} ,
 
-      // M_ACT_1, M_SENS_2
-      { 0, 0} ,
+			// M_BROADCAST
+			{ -M_BROADCAST } ,
+
+			// M_ACT_1, M_SENS_2, M_ACK1, M_ACK2
+			{ M_ACK1, 0, M_ACK1, 0} ,
 
 			// M_SENS_1, M_SENS_2
       { M_SENS_1, 0} ,
 
-      // M_ALERT
+      // M_ACT_1, M_SENS_2
+			{ 0, 0} ,
+
+			// M_ALERT
       { M_ALERT } ,
     };
 
@@ -534,22 +539,22 @@ load_sched_table()
 
   } else if(node_id == SENSOR2) {
     int16_t sched_table_instance[TTW_NUMBER_ROUNDS][TTW_MAX_SLOTS_PER_ROUND] =  {
-			// M_ACT_1, M_BROADCAST
-			{ 0, -M_BROADCAST  } ,
-
-			// M_SENS_2, M_ACK1, M_ACK2
-			{ M_SENS_2, 0, M_ACK2} ,
-
 			// M_BROADCAST
 			{ -M_BROADCAST } ,
 
 			// M_SENS_1, M_SENS_2, M_ACK1, M_ACK2
 			{ 0, M_SENS_2, 0, M_ACK2} ,
 
-			// M_ACT_1, M_SENS_2
-			{ 0, M_SENS_2} ,
+			// M_BROADCAST
+			{ -M_BROADCAST  } ,
+
+			// M_ACT_1, M_SENS_2, M_ACK1, M_ACK2
+			{ 0, M_SENS_2, 0, M_ACK2} ,
 
 			// M_SENS_1, M_SENS_2
+			{ 0, M_SENS_2} ,
+
+			// M_ACT_1, M_SENS_2
 			{ 0, M_SENS_2} ,
 
 			// M_ALERT
@@ -562,23 +567,23 @@ load_sched_table()
 
   } else if(node_id == ACTUATOR) {
     int16_t sched_table_instance[TTW_NUMBER_ROUNDS][TTW_MAX_SLOTS_PER_ROUND] =  {
-    	// M_ACT_1, M_BROADCAST
-			{ -M_ACT_1, 0 } ,
-
-			// M_SENS_2, M_ACK1, M_ACK2
-			{ 0, 0, 0} ,
-
-			// M_BROADCAST
+    	// M_BROADCAST
 			{ 0 } ,
 
 			// M_SENS_1, M_SENS_2, M_ACK1, M_ACK2
 			{ 0, 0, 0, 0} ,
 
-			// M_ACT_1, M_SENS_2
-			{ -M_ACT_1, 0} ,
+			//M_BROADCAST
+			{ 0 } ,
+
+			//  M_ACT_1, M_SENS_2, M_ACK1, M_ACK2
+			{ -M_ACT_1, 0, 0, 0} ,
 
 			// M_SENS_1, M_SENS_2
 			{ 0, 0} ,
+
+			// M_ACT_1, M_SENS_2
+			{ -M_ACT_1, 0} ,
 
 			// M_ALERT
       { 0 } ,
@@ -590,17 +595,17 @@ load_sched_table()
 
   } else if(node_id == CONTROLLER) {
     int16_t sched_table_instance[TTW_NUMBER_ROUNDS][TTW_MAX_SLOTS_PER_ROUND] =  {
-			// M_ACT_1, M_BROADCAST
-			{ 0, M_BROADCAST } ,
-
-			// M_SENS_2, M_ACK1, M_ACK2
-			{ -M_SENS_2, -M_ACK1, -M_ACK2} ,
-
 			// M_BROADCAST
 			{ M_BROADCAST } ,
 
 			// M_SENS_1, M_SENS_2, M_ACK1, M_ACK2
 			{ -M_SENS_1, -M_SENS_2, -M_ACK1, -M_ACK2} ,
+
+			// M_BROADCAST
+			{ M_BROADCAST } ,
+
+			// M_ACT_1, M_SENS_2, M_ACK1, M_ACK2
+			{ 0, -M_SENS_2, -M_ACK1, -M_ACK2} ,
 
 			// M_ACT_1, M_SENS_2
 			{ M_ACT_1, -M_SENS_2} ,

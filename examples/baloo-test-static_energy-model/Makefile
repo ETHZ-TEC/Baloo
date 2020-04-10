@@ -9,7 +9,7 @@ ifeq ($(TARGET), dpp)
 endif
 
 # select the number of slots per round
-CFLAGS += -DTTW_MAX_SLOTS_PER_ROUND=30
+CFLAGS += -DTTW_MAX_SLOTS_PER_ROUND=5
 # select the payload size
 CFLAGS += -DTTW_MAX_PAYLOAD_LEN=8
 # select the random seed

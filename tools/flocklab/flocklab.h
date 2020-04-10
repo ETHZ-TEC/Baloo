@@ -37,6 +37,9 @@
 /* platform dependent GPIO definitions */
 #ifdef PLATFORM_SKY
 
+  /* set node_ID for patching */
+  #define USE_FLOCKLAB_NODE_ID 1
+
   /* the following pins assignments are given by the FlockLAB testbed */
   #define FLOCKLAB_LED1       PORT6, PIN7  /* for GPIO tracing */
   #define FLOCKLAB_LED2       PORT6, PIN6  /* for GPIO tracing */

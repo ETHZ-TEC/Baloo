@@ -54,13 +54,15 @@ static uint32_t       time;
 static uint16_t       period;
 static uint16_t       counter = 0;
 static uint16_t       rcv_cnt = 0;
-static const uint16_t static_nodes[GMW_CONF_MAX_SLOTS] =
+/*static const uint16_t static_nodes[GMW_CONF_MAX_SLOTS] =
                                        { 1, 2, 3, 4, 6,
                                          7, 8,10,11,13,
                                         14,15,16,17,18,
                                         19,20,22,23,24,
                                         25,26,27,28,32,
-                                        33 };
+                                        33 };*/
+static const uint16_t static_nodes[GMW_CONF_MAX_SLOTS] =
+                                       { 11, 10, 9, 7, 6, 5, 4, 2 };
 static const uint8_t number_of_static_nodes = GMW_CONF_MAX_SLOTS;
 /*---------------------------------------------------------------------------*/
 static void app_control_init(gmw_control_t* control);
