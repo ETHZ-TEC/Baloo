@@ -1,8 +1,9 @@
 This example is a simple implementation of the TTnet stack, described in the following paper:
 > **Time-Triggered Wireless Architecture**  
-Romain Jacob, Licong Zhang, Marco Zimmerling, Samarjit Chakraborty, Lothar Thiele   
-Accepted to ECRTS 2020  
-[arXiv (submitted version)](https://arxiv.org/abs/2002.07491)
+Romain Jacob, Licong Zhang, Marco Zimmerling, Jan Beutel, Samarjit Chakraborty, Lothar Thiele   
+ECRTS 2020  
+[ [10.4230/LIPIcs.ECRTS.2020.19](https://doi.org/10.4230/LIPIcs.ECRTS.2020.19) ]
+[ [arXiv (submitted version)](https://arxiv.org/abs/2002.07491) ]  
 
 <!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
